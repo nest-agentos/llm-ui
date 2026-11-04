@@ -1,0 +1,12 @@
+.llm-ocr {border:1px solid var(--llm-chat-border,#ddd);border-radius:8px;margin-block:6px;background:var(--llm-chat-background,#fff);overflow:hidden;}
+.llm-ocr[hidden] {display:none;}
+.llm-ocr__header {display:flex;align-items:center;justify-content:space-between;padding:8px 12px;gap:8px;}
+.llm-ocr__close {min-width:44px;min-height:44px;}
+.llm-ocr__status,.llm-ocr__error {padding:8px 12px;}
+.llm-ocr__error {color:var(--llm-chat-danger,#c33);}
+.llm-ocr__review {display:flex;align-items:flex-start;gap:10px;padding:10px;min-width:0;}
+.llm-ocr__image {max-width:30%;max-height:220px;object-fit:contain;}
+.llm-ocr__text {flex:1;min-width:0;min-height:160px;max-height:320px;resize:vertical;font:inherit;background:inherit;color:inherit;}
+.llm-ocr__actions {display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px;}
+.llm-ocr__actions button {min-height:44px;cursor:pointer;font:inherit;}
+@media(max-width:768px) {.llm-ocr__text {font-size:16px;}}

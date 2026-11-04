@@ -1,0 +1,64 @@
+import type {Translation, TranslationParameters} from './contracts';
+const zh = {
+    toolGroupCount: '{count} 个工具输出', toolGroupRunning: '{count} 个执行中', toolGroupFailed: '{count} 个失败',
+    ocr: '识别文字', ocrProcessing: '正在识别文字…', ocrReview: '检查识别结果', ocrSource: '原图', ocrInsertRemove: '插入文字并移除图片', ocrInsertKeep: '插入文字并保留图片', ocrRetry: '重新识别', ocrFailed: '文字识别失败', ocrEmpty: '未识别到文字', ocrAttachmentChanged: '图片已变化，请重新识别', ocrUnavailable: '无法读取图片，请重新添加附件', ocrFinishReview: '请先完成或取消文字识别',
+    user: '用户', assistant: '助手', system: '系统', tool: '工具', send: '发送', cancel: '停止', retry: '重新生成', edit: '编辑', save: '保存', close: '取消',
+    steer: '补充到当前执行',
+    inputStatus: '查看输入状态详情', attachments: '附件',
+    queue: '加入队列：当前执行结束后处理', copy: '复制', print: '打印', earlier: '加载更早消息', refresh: '刷新', attach: '添加附件',
+    remove: '移除', pending: '提交中', accepted: '已接纳', rejected: '提交被拒绝', unknown: '结果待核对',
+    reconcile: '核对操作', upload: '上传中', failed: '操作失败', required: '请填写必填项',
+    range: '选择数量不符合要求', reasoning: '思考', unsupported: '未登记的扩展', input: '输入消息', inputPlaceholder: '说说你想完成什么，也可以粘贴或拖入图片…',
+    answer: '提交回答', note: '说明', prompts: '提问目录', loading: '加载中',
+    unsupportedInteraction: '当前界面不支持此交互，请使用原生客户端处理。',
+    executionRunning: '执行中', executionWaiting: '等待输入', executionLastActivity: '最近活动 {seconds} 秒前', online: '已连接', offline: '离线', reconnecting: '重新连接中',
+    commandAmbiguous: '命令同名，请在菜单中选择来源', commandUnavailable: '命令已变化或当前不可用',
+    flow: 'Flow', toggleMessage: '折叠或展开消息', toggleAll: '折叠或展开全部消息',
+    toolPending: '等待执行', toolRunning: '执行中', toolSucceeded: '已完成', toolFailed: '执行失败', toolCancelled: '已取消', toolUnknown: '结果未知',
+    popupSearch: '搜索…', popupEmpty: '没有匹配项', popupRemove: '移除', popupMore: '还有 {count} 项',
+    ttyRunning: '运行中', ttyStopped: '已停止', ttyExited: '已退出', ttyExitUnknown: '进程已停止（退出码未知）', ttyExitKnown: '进程已退出（退出码 {code}）',
+    allChoices: '全部', more: '更多', chooseTarget: '请选择执行方式', noTargets: '没有可用的执行目标，请检查智能体或流程配置', callTarget: '调用目标', changedTarget: '目标已变化或不可用，请重新选择',
+    changedInputHost: '执行方式已更新，请移除旧参数后重新配置', invalidArgumentsHost: '已保存的参数无法读取，请移除后重新配置', arguments: '调用参数（JSON）', invalidArguments: '参数必须是有效的 JSON 对象',
+    changedInput: '目标或输入签名已变化，请检查参数后重新应用', applyArguments: '应用到所选目标', removeArguments: '移除参数',
+    search: '搜索内容', searchPlaceholder: '输入搜索内容', searchPrevious: '上一项', searchNext: '下一项',
+    searchClose: '关闭搜索', searchScope: '已加载的对话内容', searchNoResults: '无匹配结果',
+    promptClose: '关闭提问目录', promptSearch: '搜索提问', promptFirst: '开头', promptMiddle: '中间', promptLast: '最近',
+    promptPreview: '三行预览', promptMore: '显示更多', promptLoadedOnly: '仅显示已加载历史中的提问',
+    promptAttachment: '附件提问', promptEmpty: '没有匹配的提问', promptNoLoaded: '已加载历史中没有提问',
+    promptLoading: '正在加载更早历史', promptCount: '{count} / {total}',
+};
+const en: Record<keyof typeof zh, string> = {
+    toolGroupCount: '{count} tool outputs', toolGroupRunning: '{count} running', toolGroupFailed: '{count} failed',
+    ocr: 'Extract text', ocrProcessing: 'Recognizing text…', ocrReview: 'Review recognized text', ocrSource: 'Source image', ocrInsertRemove: 'Insert text and remove image', ocrInsertKeep: 'Insert text and keep image', ocrRetry: 'Recognize again', ocrFailed: 'Text recognition failed', ocrEmpty: 'No text recognized', ocrAttachmentChanged: 'Image changed; recognize it again', ocrUnavailable: 'Cannot read image; attach it again', ocrFinishReview: 'Finish or cancel text recognition first',
+    user: 'User', assistant: 'Assistant', system: 'System', tool: 'Tool', send: 'Send', cancel: 'Stop', retry: 'Regenerate', edit: 'Edit', save: 'Save', close: 'Cancel',
+    steer: 'Add context to current execution',
+    inputStatus: 'View input status details', attachments: 'Attachments',
+    queue: 'Queue: run after the current execution', copy: 'Copy', print: 'Print', earlier: 'Load earlier messages', refresh: 'Refresh', attach: 'Attach files',
+    remove: 'Remove', pending: 'Submitting', accepted: 'Accepted', rejected: 'Rejected', unknown: 'Outcome unknown',
+    reconcile: 'Reconcile', upload: 'Uploading', failed: 'Operation failed', required: 'Complete required fields',
+    range: 'Invalid number of selections', reasoning: 'Reasoning', unsupported: 'Unregistered extension', input: 'Message', inputPlaceholder: 'What would you like to do? Paste or drop images here…',
+    answer: 'Submit answer', note: 'Note', prompts: 'Questions', loading: 'Loading',
+    unsupportedInteraction: 'This interaction is unsupported. Use the native client to respond.',
+    executionRunning: 'Running', executionWaiting: 'Waiting for input', executionLastActivity: 'Last activity {seconds}s ago', online: 'Connected', offline: 'Offline', reconnecting: 'Reconnecting',
+    commandAmbiguous: 'Select the source of this ambiguous command', commandUnavailable: 'Command changed or is unavailable',
+    flow: 'Flow', toggleMessage: 'Collapse or expand message', toggleAll: 'Collapse or expand all messages',
+    toolPending: 'Pending', toolRunning: 'Running', toolSucceeded: 'Succeeded', toolFailed: 'Failed', toolCancelled: 'Cancelled', toolUnknown: 'Unknown outcome',
+    popupSearch: 'Search…', popupEmpty: 'No results', popupRemove: 'Remove', popupMore: '{count} more',
+    ttyRunning: 'running', ttyStopped: 'stopped', ttyExited: 'exited', ttyExitUnknown: 'Process stopped (exit code unknown)', ttyExitKnown: 'Process exited (code {code})',
+    allChoices: 'All', more: 'More', chooseTarget: 'Choose an executor', noTargets: 'No execution targets available. Check agent or flow configuration.', callTarget: 'Call target', changedTarget: 'Target changed or is unavailable. Select it again.',
+    changedInputHost: 'The executor changed. Remove the old arguments and configure them again.', invalidArgumentsHost: 'Saved arguments cannot be read. Remove them and configure again.', arguments: 'Call arguments (JSON)', invalidArguments: 'Arguments must be a valid JSON object',
+    changedInput: 'Target or input signature changed. Review and apply the arguments again.', applyArguments: 'Apply to selected target', removeArguments: 'Remove arguments',
+    search: 'Find content', searchPlaceholder: 'Search conversation content', searchPrevious: 'Previous match', searchNext: 'Next match',
+    searchClose: 'Close search', searchScope: 'Loaded conversation content', searchNoResults: 'No matches',
+    promptClose: 'Close questions', promptSearch: 'Search questions', promptFirst: 'First', promptMiddle: 'Middle', promptLast: 'Latest',
+    promptPreview: 'Three-line preview', promptMore: 'Show more', promptLoadedOnly: 'Questions from loaded history only',
+    promptAttachment: 'Attachment question', promptEmpty: 'No matching questions', promptNoLoaded: 'No questions in loaded history',
+    promptLoading: 'Loading earlier history', promptCount: '{count} / {total}',
+};
+export type Translate = (key: keyof typeof zh, parameters?: TranslationParameters) => string;
+export function translator(locale = 'zh-CN', override?: Translation): Translate {
+    return (key, parameters) => {
+        const text = override?.(key, parameters) ?? (locale === 'en' ? en : zh)[key];
+        return text.replace(/\{(\w+)\}/g, (token, name) => parameters?.[name] === undefined ? token : String(parameters[name]));
+    };
+}

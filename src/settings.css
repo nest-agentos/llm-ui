@@ -1,0 +1,8 @@
+@import '@itookit/ui-common/components.css';
+@import './settings/styles/_variables.css';
+@import './settings/styles/_layout.css';
+@import './settings/styles/_components.css';
+@import './settings/styles/_connections.css';
+@import './settings/styles/_providers.css';
+@import './settings/styles/_agents.css';
+@import './settings/styles/_cost.css';

@@ -1,0 +1,10 @@
+.llm-execution-notice {
+    box-sizing: border-box; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px;
+    width: 100%; max-width: var(--llm-chat-width, 780px); margin: 8px auto; padding: 12px 16px;
+    border: 1px solid var(--llm-chat-accent, #3b82f6); border-radius: 8px;
+    background: color-mix(in srgb, var(--llm-chat-accent, #3b82f6) 8%, Canvas);
+    color: var(--llm-text-primary, CanvasText); font-size: 14px; line-height: 1.5;
+}
+.llm-execution-notice[hidden] { display: none; }
+.llm-execution-notice__message { flex: 1 1 220px; font-weight: 600; }
+.llm-execution-notice__elapsed { font-size: 12px; color: var(--llm-text-secondary, #666); }

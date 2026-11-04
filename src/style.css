@@ -1,0 +1,10 @@
+@import './ocr.css';
+@import '@itookit/ui-common/navigation.css';
+@import './tty-panel.css';
+@import './popup.css';
+@import './flow.css';
+@import './chat-base.css';
+@import './appearance.css';
+@import './execution-notice.css';
+@import './prompt-navigation.css';
+@import './composer-indicators.css';

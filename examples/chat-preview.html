@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>llm-ui 共享界面预览</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 24px; color: #263244; background: #eef1f5; font: 14px/1.6 system-ui, sans-serif; }
+        h1 { margin: 0 0 4px; font-size: 22px; }
+        body > p { margin: 0 0 20px; }
+        main { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+        section > h2 { margin: 0 0 8px; font-size: 14px; font-weight: 500; }
+        section > h2 > button { margin-inline-start: 12px; padding: 4px 8px; cursor: pointer; }
+        .preview-host { height: min(760px, calc(100dvh - 180px)); min-height: 400px; overflow: hidden; border: 1px solid #cbd3df; border-radius: 14px; }
+        .preview-theme { --llm-color-primary: #267773; --llm-color-primary-hover: #1c5e5b; --llm-chat-width: 720px; }
+        @media (max-width: 768px) {
+            body { padding: 8px; }
+            h1 { font-size: 18px; }
+            main { grid-template-columns: minmax(0, 1fr); }
+            .preview-host { height: 700px; min-height: 0; }
+        }
+    </style>
+</head>
+<body>
+    <h1>同一套聊天界面，不同宿主主题</h1>
+    <p>两个实例共用 ChatView、输入交互、提问目录与滚动机制。此示例使用内存宿主，无需执行后端。</p>
+    <main>
+        <section><h2>独立库默认外观</h2><div id="default" class="preview-host"></div></section>
+        <section><h2>仅通过主题变量定制</h2><div id="themed" class="preview-host preview-theme"></div></section>
+    </main>
+    <script type="module" src="./chat-preview.ts"></script>
+</body>
+</html>

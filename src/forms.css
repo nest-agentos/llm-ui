@@ -1,0 +1,45 @@
+.llm-parameter-fields { display: grid; gap: 16px; min-width: 0; }
+.llm-parameter-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; margin: 0 0 16px; overflow-wrap: anywhere; }
+.llm-parameter-field__label { font-weight: 600; }
+.llm-parameter-field__help { font-size: .85em; opacity: .75; }
+.llm-parameter-field__input:not([type="checkbox"]), .llm-parameter-field__select, .llm-parameter-field__textarea { box-sizing: border-box; width: 100%; min-width: 0; min-height: 40px; padding: 8px 10px; border: 1px solid var(--llm-form-border, #d8dce3); border-radius: 6px; color: inherit; background: var(--llm-form-background, transparent); font: inherit; }
+.llm-parameter-field__input[type="checkbox"] { align-self: flex-start; width: 20px; height: 20px; margin: 2px 0; }
+.llm-parameter-field__textarea { resize: vertical; }
+.llm-parameter-field__wide { grid-column: 1 / -1; }
+.llm-parameter-field__input:focus-visible, .llm-parameter-field__select:focus-visible, .llm-parameter-field__textarea:focus-visible { outline: 2px solid var(--llm-form-accent, #4263eb); outline-offset: 2px; }
+
+.dag-schema-object {
+    margin: 10px 0;
+    padding: 9px 10px;
+    border: 1px solid var(--dag-border, #d8dce3);
+    border-radius: 7px;
+    background: var(--dag-bg-tertiary, Canvas);
+}
+
+.dag-schema-advanced {
+    margin: 10px 0 2px;
+    padding: 0 10px 10px;
+    border: 1px dashed var(--dag-border, #d8dce3);
+    border-radius: 8px;
+}
+
+.dag-schema-advanced > summary {
+    padding: 9px 0;
+    cursor: pointer;
+    color: var(--dag-text-secondary, GrayText);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.dag-schema-object > summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--dag-text-primary, CanvasText);
+}
+
+.dag-schema-object > small {
+    display: block;
+    margin: 8px 0;
+}
+.dag-schema-field {display: flex; flex-direction: column; gap: 5px; margin-block: 10px;}
+.dag-schema-field small {color: var(--dag-text-secondary, GrayText); font-size: .75rem; line-height: 1.5;}
