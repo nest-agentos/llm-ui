@@ -111,10 +111,6 @@
 .llm-chat__composer-actions { flex-wrap: wrap; }
 .llm-chat__composer-choices > .llm-chat__selectors { flex: 0 1 auto; min-width: 0; }
 
-.llm-chat__message-heading {display: flex; align-items: center; gap: 8px; margin-bottom: 4px;}
-.llm-chat__message-preview {overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .75;}
-.llm-chat__message:not(.is-collapsed) .llm-chat__message-preview {display: none;}
-.llm-chat__message.is-collapsed > .llm-chat__body {display: none;}
 
 .llm-chat__input-menu { position: relative; }
 .llm-chat__input-menu > summary { cursor: pointer; padding: 4px 8px; }

@@ -18,6 +18,8 @@ export function persistedOperationSnapshot(proposed: readonly OperationRecord[],
 function mergeRecord(saved: OperationRecord, incoming: OperationRecord): OperationRecord {
     const identity = (record: OperationRecord) => ({context: record.context, conversationId: record.conversationId,
         kind: record.kind, input: record.input, draft: record.draft});
+    if (saved.submittedAt !== undefined && incoming.submittedAt !== undefined && saved.submittedAt !== incoming.submittedAt) throw failure('OPERATION_IDENTITY_CONFLICT');
+    incoming = {...incoming, submittedAt: saved.submittedAt ?? incoming.submittedAt};
     if (canonical(identity(saved)) !== canonical(identity(incoming))) throw failure('OPERATION_IDENTITY_CONFLICT');
     if (terminal(saved) && terminal(incoming)) {
         if (saved.status !== incoming.status) throw failure('OPERATION_RECEIPT_CONFLICT');
@@ -39,6 +41,7 @@ function validate(record: OperationRecord): void {
     if (!record || !record.context || typeof record.context.operationId !== 'string' || !record.context.operationId
         || typeof record.context.viewId !== 'string' || typeof record.conversationId !== 'string' || !record.conversationId
         || typeof record.kind !== 'string' || !record.kind
+        || record.submittedAt !== undefined && (!Number.isFinite(record.submittedAt) || record.submittedAt <= 0)
         || !['submitting', 'unknown', 'accepted', 'rejected'].includes(record.status) || record.input === undefined)
         throw failure('OPERATION_RECORD_INVALID');
 }

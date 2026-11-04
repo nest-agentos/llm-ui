@@ -1,4 +1,4 @@
-export interface DisclosureEntry {id: string; element: HTMLElement; trigger?: HTMLElement}
+export interface DisclosureEntry {id: string; element: HTMLElement; trigger?: HTMLElement; present?(collapsed: boolean): void}
 export type DisclosureLocation = {kind: 'item'; id: string} | {kind: 'start' | 'end'};
 export interface DisclosureOptions {
     initialStates?: Readonly<Record<string, boolean>>;
@@ -76,6 +76,7 @@ export class DisclosureController {
         this.present(entry, collapsed);
     }
     private present(entry: DisclosureEntry, collapsed: boolean): void {
+        entry.present?.(collapsed);
         entry.trigger?.setAttribute('aria-expanded', String(!collapsed)); this.options.present?.(entry, collapsed);
     }
     private notify(): void {this.options.onChange?.(this.getStates());}

@@ -1,5 +1,7 @@
 import type {Translation, TranslationParameters} from './contracts';
 const zh = {
+    recordedAt: '记录于', sentAt: '发送于', startedAt: '开始于', completedAt: '完成于', failedAt: '失败于', stoppedAt: '停止于', generating: '正在生成',
+    responseDuration: '响应耗时 {seconds} 秒', turnDuration: '本轮耗时 {seconds} 秒', timeDetails: '查看时间详情', selectionAI: 'AI 新会话',
     toolGroupCount: '{count} 个工具输出', toolGroupRunning: '{count} 个执行中', toolGroupFailed: '{count} 个失败',
     ocr: '识别文字', ocrProcessing: '正在识别文字…', ocrReview: '检查识别结果', ocrSource: '原图', ocrInsertRemove: '插入文字并移除图片', ocrInsertKeep: '插入文字并保留图片', ocrRetry: '重新识别', ocrFailed: '文字识别失败', ocrEmpty: '未识别到文字', ocrAttachmentChanged: '图片已变化，请重新识别', ocrUnavailable: '无法读取图片，请重新添加附件', ocrFinishReview: '请先完成或取消文字识别',
     user: '用户', assistant: '助手', system: '系统', tool: '工具', send: '发送', cancel: '停止', retry: '重新生成', edit: '编辑', save: '保存', close: '取消',
@@ -28,6 +30,8 @@ const zh = {
     promptLoading: '正在加载更早历史', promptCount: '{count} / {total}',
 };
 const en: Record<keyof typeof zh, string> = {
+    recordedAt: 'Recorded', sentAt: 'Sent', startedAt: 'Started', completedAt: 'Completed', failedAt: 'Failed', stoppedAt: 'Stopped', generating: 'Generating',
+    responseDuration: 'Response {seconds}s', turnDuration: 'Turn {seconds}s', timeDetails: 'View timing details', selectionAI: 'AI new conversation',
     toolGroupCount: '{count} tool outputs', toolGroupRunning: '{count} running', toolGroupFailed: '{count} failed',
     ocr: 'Extract text', ocrProcessing: 'Recognizing text…', ocrReview: 'Review recognized text', ocrSource: 'Source image', ocrInsertRemove: 'Insert text and remove image', ocrInsertKeep: 'Insert text and keep image', ocrRetry: 'Recognize again', ocrFailed: 'Text recognition failed', ocrEmpty: 'No text recognized', ocrAttachmentChanged: 'Image changed; recognize it again', ocrUnavailable: 'Cannot read image; attach it again', ocrFinishReview: 'Finish or cancel text recognition first',
     user: 'User', assistant: 'Assistant', system: 'System', tool: 'Tool', send: 'Send', cancel: 'Stop', retry: 'Regenerate', edit: 'Edit', save: 'Save', close: 'Cancel',

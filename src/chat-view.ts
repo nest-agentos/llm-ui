@@ -5,7 +5,7 @@ import {mountTitleBar as mountSharedTitleBar} from '@nestos/ui-common';
 import {DisclosureController} from './disclosure';
 import {isCommandInput} from './commands';
 import { randomUUID } from './random';
-import { DefaultPrintService } from '@nestos/mdxeditor';
+import {ContentListView, DefaultPrintService} from '@nestos/mdxeditor';
 import type { ActionName, ChatMessage, ChatOptions, ChatView, CommandSubmission, ConversationSnapshot, JsonValue,
     MessageTarget, MountedToolbar, OperationContext, OperationReceipt, OperationRecord, ChatBinding, ComposerDraft, BindingDiagnostic, ChatSubmission, SendPreparation } from './contracts';
 import { Composer } from './composer';
@@ -41,6 +41,7 @@ export class ChatController implements ChatView {
     private readonly status = element('span', 'llm-chat__status');
     private readonly toolbar = element('div', 'llm-chat__toolbar');
     private readonly history = element('div', 'llm-chat__history');
+    private readonly contentList = new ContentListView(this.history, {layout: 'host'});
     private readonly requests = element('div', 'llm-chat__interactions');
     private scroll!: ScrollController;
     private readonly navigation: PromptNavigator;
@@ -202,6 +203,7 @@ export class ChatController implements ChatView {
         if (draft) {this.draftViews = new Set([snapshot.viewId]); this.preparing = undefined;} else this.draftViews?.add(snapshot.viewId);
         this.confirming = new Set(); this.inFlight.clear(); this.registering = undefined;
         for (const abort of this.reads) abort.abort(); this.reads.clear(); this.reading = false; this.earlierError = '';
+        this.contentList.configureSelection(); this.contentList.sync([]);
         this.navigation.close(false); this.search.setActive(false);
         const rows = [...this.rows.values()]; for (const row of rows) row.view.element.remove(); this.rows.clear();
         for (const card of this.cards.values()) card.destroy(); this.cards.clear();
@@ -215,7 +217,7 @@ export class ChatController implements ChatView {
         this.startSlot = mountChatSlot(this.composer.start, options.mountComposerStart, {snapshot, view: this});
         this.composerSlot = mountChatSlot(this.composer.menu, options.mountComposerMenu, {snapshot, view: this});
         this.arrangeHeader(); this.activateBinding(lifetime, this.active);
-        this.search.setActive(this.active); if (draft) this.scroll.forceScrollToBottom();
+        this.configureSelection(); this.search.setActive(this.active); if (draft) this.scroll.forceScrollToBottom();
     }
     private retireBinding(steps: (() => void | Promise<void>)[], operationId: string, started: number): void {
         const task = disposeAll(steps);
@@ -231,6 +233,7 @@ export class ChatController implements ChatView {
         }
     }
     initialize(): void {
+        this.configureSelection();
         if (this.options.features?.flow && !this.options.flow) throw new Error('Flow options are required to enable the Flow feature');
         void this.flow.setEnabled(this.options.features?.flow ?? false);
         assertBinding(this.options);
@@ -371,6 +374,7 @@ export class ChatController implements ChatView {
             tools: message.role === 'tool' || message.parts.length > 0 && message.parts.every(part => part.kind === 'tool')
                 ? message.parts.filter((part): part is Extract<typeof part, {kind: 'tool'}> => part.kind === 'tool') : undefined,
             continuation: message.role === 'assistant' && message.parts.length > 0 && message.parts.every(part => part.kind === 'reasoning')})), this.snapshot.conversationId);
+        this.contentList.sync(messages.map(message => ({id: message.id, view: this.rows.get(message.id)!.view.content})));
         this.follow();
         this.search.refresh();
     }
@@ -381,8 +385,8 @@ export class ChatController implements ChatView {
             const view = new MessageView(this.options, this.t, {
                 edit: (target, text) => this.edit(target, text), retry: target => this.retry(target),
             }, () => { this.follow(); this.search.refresh(); }, this.disclosure);
-            row = { view, message, permissions }; this.rows.set(message.id, row); view.update(message, this.snapshot);
-        } else if (message.revision !== row.message.revision || permissions !== row.permissions) {
+            row = { view, message, permissions }; this.rows.set(message.id, row); view.update(message, this.snapshot); view.setActive(this.active);
+        } else if (message.revision !== row.message.revision || message.state !== row.message.state || message.timestamp !== row.message.timestamp || JSON.stringify(message.timing) !== JSON.stringify(row.message.timing) || permissions !== row.permissions) {
             row.message = message; row.permissions = permissions; row.view.update(message, this.snapshot);
         } else if (this.options.messageActions) {
             row.view.renderActions(message, this.snapshot);
@@ -470,7 +474,7 @@ export class ChatController implements ChatView {
                 || prepared && (prepared.viewId !== this.snapshot.viewId || !prepared.operationId))
                 throw Object.assign(new Error('Submission preparation binding expired'), {code: 'STALE_VIEW'});
             diagnoseOperation(options.onDiagnostic, {operationId: prepared?.operationId ?? operationId, kind: 'send', stage: 'prepare', result: 'success'}, started);
-            return prepared;
+            return prepared ? {...prepared, submittedAt: started} : null;
         } catch (error) {
             diagnoseOperation(options.onDiagnostic, {operationId, kind: 'send', stage: 'prepare', result: 'failed'}, started, (error as {code?: unknown})?.code ?? 'SEND_PREPARATION_FAILED');
             throw error;
@@ -498,9 +502,9 @@ export class ChatController implements ChatView {
             && (unresolved(record) && !(queryOperation(kind, input) && record.status === 'unknown') || kind === 'respond' && record.status === 'accepted')))
             throw new Error('Operation is awaiting reconciliation or an updated request');
         if (prepared && prepared.viewId !== this.snapshot.viewId) throw Object.assign(new Error('Prepared view changed before dispatch'), {code: 'STALE_VIEW'});
-        const context = prepared ?? {viewId: this.snapshot.viewId, operationId: randomUUID()};
+        const context = prepared ? {viewId: prepared.viewId, operationId: prepared.operationId} : {viewId: this.snapshot.viewId, operationId: randomUUID()};
         this.inFlight.set(key, context.operationId);
-        try { await this.dispatch(context, kind, input, action, draft); }
+        try { await this.dispatch(context, kind, input, action, draft, prepared?.submittedAt); }
         finally { if (this.inFlight.get(key) === context.operationId) this.inFlight.delete(key); }
     }
     private pendingTransport(key: string): boolean {
@@ -512,16 +516,16 @@ export class ChatController implements ChatView {
     private async register(record: OperationRecord, options: ChatOptions): Promise<boolean> {
         if (record.kind === 'send' || record.kind === 'command') this.registering = record.context.operationId;
         if (!this.closed) this.updateAvailability();
-        try {return await registerOperation(options, record);}
+        try {return await registerOperation(options, {...record, submittedAt: record.submittedAt ?? Date.now()});}
         finally {
             if (this.registering === record.context.operationId) this.registering = undefined;
             if (!this.closed) this.updateAvailability();
         }
     }
     private async dispatch(context: OperationContext, kind: ActionName, input: JsonValue, action: (context: OperationContext) => Promise<OperationReceipt>,
-        draft?: import('./contracts').ComposerDraft): Promise<void> {
+        draft?: import('./contracts').ComposerDraft, submittedAt?: number): Promise<void> {
         const options = this.options;
-        if (!await this.register({ context, conversationId: this.snapshot.conversationId, kind, input, draft, status: 'submitting' }, options)) return;
+        if (!await this.register({ context, conversationId: this.snapshot.conversationId, kind, input, draft, submittedAt, status: 'submitting' }, options)) return;
         if (this.closed || this.options !== options) {
             await settleOperation(options, {status: 'rejected', operationId: context.operationId, code: 'STALE_VIEW', message: 'View changed before dispatch'}, kind);
             throw Object.assign(new Error('View changed before dispatch'), {code: 'STALE_VIEW'});
@@ -608,10 +612,16 @@ export class ChatController implements ChatView {
         try { await service.printFromHtml(this.history.innerHTML, { title: this.snapshot.title, locale: this.options.locale }); }
         finally { service.destroy(); }
     }
+    private configureSelection(): void {
+        this.contentList.configureSelection(this.options.onContentSelection ? {label: this.t('selectionAI'),
+            run: this.options.onContentSelection, onError: error => this.report(error)} : undefined);
+        this.contentList.setActive(this.active);
+    }
     setActive(active: boolean): void {
         if (this.closed) return;
         if (this.snapshot) this.executionStatus.update(this.snapshot, active);
         this.ocr.setActive(active); this.active = active; if (!active) {for (const read of this.reads) read.abort(); this.reads.clear(); this.reading = false;} this.composer.setActive(active); this.flow.setActive(active); this.search.setActive(active); if (active) this.changed();
+        this.contentList.setActive(active); for (const row of this.rows.values()) row.view.setActive(active);
         this.scroll.setActive(active); if (!active) this.navigation.close(false);
         this.activateBinding(this.lifetime, active);
     }
@@ -672,6 +682,7 @@ export class ChatController implements ChatView {
     destroy(): Promise<void> {
         if (this.disposed) return this.disposed;
         this.closed = true;
+        this.contentList.destroy();
         this.executionStatus.destroy();
         return this.disposed = Promise.resolve().then(() => this.disposeView());
     }
@@ -701,7 +712,7 @@ function operationKey(kind: OperationRecord['kind'], input: JsonValue): string {
 function temporaryMessage(record: OperationRecord, label: string): ChatMessage {
     const input = getOperationCallInput(record);
     return { id: `operation:${record.context.operationId}`, revision: ['submitting', 'accepted', 'unknown', 'rejected'].indexOf(record.status),
-        role: 'user', state: record.status === 'rejected' ? 'failed' : 'pending',
+        role: 'user', state: record.status === 'rejected' ? 'failed' : 'pending', timing: {submittedAt: record.submittedAt},
         parts: [{ id: 'text', kind: 'markdown', text: record.draft?.text ?? '' },
             ...(input ? [{id: 'arguments', kind: 'json' as const, label, value: input.values}] : []),
             { id: 'status', kind: 'tool', name: record.status, summary: record.message ?? '', state: record.status === 'rejected' ? 'failed' : 'running' },

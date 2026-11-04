@@ -1,3 +1,5 @@
+import {ContentView} from '@nestos/mdxeditor';
+import {MessageTiming} from './message-timing';
 import {ToolOutputGroups} from './tool-groups';
 import type {DisclosureEntry, DisclosureController} from './disclosure';
 import type { ChatMessage, ChatOptions, ConversationSnapshot, MessageTarget } from './contracts';
@@ -10,16 +12,14 @@ export interface MessageCommands {
     retry(target: MessageTarget): Promise<void>;
 }
 export class MessageView {
-    readonly element = element('article', 'llm-chat__message');
-    private readonly body = element('div', 'llm-chat__body');
-    private readonly actions = element('div', 'llm-chat__message-actions');
-    private readonly time = element('time', 'llm-chat__message-time');
-    private readonly more = element('details', 'llm-chat__message-more');
-    private readonly moreBody = element('div', 'llm-chat__message-menu');
+    readonly content: ContentView;
+    readonly element: HTMLElement;
+    private readonly body: HTMLElement;
+    private readonly actions: HTMLElement;
+    private readonly more: HTMLDetailsElement;
+    private readonly moreBody: HTMLElement;
     private readonly toggle: HTMLButtonElement;
-    private readonly role = element('span', 'llm-chat__message-role');
-    private readonly heading = element('div', 'llm-chat__message-heading');
-    private readonly preview = element('span', 'llm-chat__message-preview');
+    private readonly timing: MessageTiming;
     private disclosureEntry?: DisclosureEntry;
     private stopDisclosure?: () => void;
     private readonly toolGroups: ToolOutputGroups;
@@ -31,21 +31,29 @@ export class MessageView {
     private closed = false;
     constructor(private readonly options: ChatOptions, private readonly t: Translate,
         private readonly commands: MessageCommands, private readonly rendered: () => void, private readonly disclosure: DisclosureController) {
+        this.content = new ContentView({labels: {expand: t('toggleMessage'), collapse: t('toggleMessage'), details: t('timeDetails'), copy: t('copy'), more: t('more')},
+            onToggle: expanded => {if (this.disclosureEntry) this.disclosure.toggle(this.disclosureEntry, !expanded);}});
+        this.element = this.content.element; this.element.classList.add('llm-chat__message');
+        this.body = this.content.body; this.body.classList.add('llm-chat__body');
+        this.actions = this.content.actions; this.actions.classList.add('llm-chat__message-actions');
+        this.content.header.dataset.searchExclude = '';
+        this.actions.dataset.searchExclude = '';
+        this.toggle = this.content.toggle;
+        this.timing = new MessageTiming(this.content, t, options.locale);
         this.toolGroups = new ToolOutputGroups(this.body, this.t, this.disclosure);
-        this.toggle = presentButton(button(this.t('toggleMessage'), () => {if (!this.closed && this.disclosureEntry) this.disclosure.toggle(this.disclosureEntry);}), 'collapseMessage', options.presentButton);
-        this.heading.dataset.searchExclude = ''; this.actions.dataset.searchExclude = ''; this.heading.append(this.role, this.preview);
-        const summary = element('summary'), moreButton = presentButton(button(this.t('more'), () => {this.more.open = !this.more.open;}), 'more', options.presentButton);
-        moreButton.addEventListener('click', event => event.preventDefault()); summary.append(moreButton); this.more.append(summary, this.moreBody);
-        this.element.append(this.heading, this.body, this.actions, this.feedback);
+        this.more = this.content.more; this.more.classList.add('llm-chat__message-more');
+        this.moreBody = this.content.moreBody; this.moreBody.classList.add('llm-chat__message-menu');
+        presentButton(this.content.moreButton, 'more', options.presentButton);
+        this.element.append(this.feedback);
     }
     update(message: ChatMessage, snapshot: ConversationSnapshot): void {
         this.element.dataset.messageId = message.id;
         if (!this.disclosureEntry) {
             this.disclosureEntry = {id: JSON.stringify([snapshot.conversationId, message.id, 'message']), element: this.element,
-                trigger: this.toggle}; this.stopDisclosure = this.disclosure.register(this.disclosureEntry);
+                trigger: this.toggle, present: collapsed => this.content.setExpanded(!collapsed)}; this.stopDisclosure = this.disclosure.register(this.disclosureEntry);
         }
-        this.preview.textContent = message.parts.flatMap(part => 'text' in part ? [part.text] : part.kind === 'tool' ? [part.summary] : []).join(' ').slice(0, 160);
-        this.element.dataset.role = message.role; this.role.textContent = this.t(message.role);
+        this.content.update({title: this.t(message.role), preview: message.parts.flatMap(part => 'text' in part ? [part.text] : part.kind === 'tool' ? [part.summary] : []).join(' ').replace(/\s+/g, ' ').slice(0, 160)});
+        this.element.dataset.role = message.role;
         this.element.dataset.state = message.state;
         const keys = new Set<string>();
         for (const part of message.parts) {
@@ -68,13 +76,14 @@ export class MessageView {
     }
     renderActions(message: ChatMessage, snapshot: ConversationSnapshot): void {
         this.actions.replaceChildren(); this.moreBody.replaceChildren();
-        this.updateTime(message); this.actions.append(this.time);
+        this.timing.update(message);
         const text = () => message.parts.flatMap(part => 'text' in part ? [part.text] : part.kind === 'json' ? [JSON.stringify(part.value, null, 2)] : []).join('\n\n');
-        this.actions.append(this.iconButton('copy', () => { void navigator.clipboard?.writeText(text()).catch(this.options.onError ?? (() => {})); }));
+        this.content.setCopySource(text, this.t('copy'), error => this.options.onError?.(error));
+        presentButton(this.content.copyButton, 'copy', this.options.presentButton);
         const target = { messageId: message.id, expectedRevision: message.revision };
         if (this.options.actions.retry && message.allowed?.includes('retry') && snapshot.allowed.includes('retry'))
             this.actions.append(this.iconButton('retry', () => { void this.run(() => this.commands.retry(target)); }));
-        this.actions.append(this.toggle);
+
         if (this.options.actions.edit && message.allowed?.includes('edit') && snapshot.allowed.includes('edit'))
             (message.role === 'user' ? this.actions : this.moreBody).append(this.iconButton('edit', () => this.openEditor(target, text())));
         for (const action of this.options.messageActions?.({message, snapshot}) ?? []) {
@@ -84,12 +93,6 @@ export class MessageView {
         }
         this.more.hidden = !this.moreBody.childElementCount; this.actions.append(this.more);
         if (this.busy) this.actions.querySelectorAll('button').forEach(node => {node.disabled = true;});
-    }
-    private updateTime(message: ChatMessage): void {
-        const date = new Date(message.timestamp ?? NaN), valid = Number.isFinite(date.getTime()); this.time.hidden = !valid;
-        this.time.dateTime = valid ? date.toISOString() : '';
-        this.time.textContent = valid ? date.toLocaleTimeString(this.options.locale, {hour: '2-digit', minute: '2-digit', hour12: false}) : '';
-        this.time.title = valid ? date.toLocaleString(this.options.locale) : '';
     }
     private openEditor(target: MessageTarget, text: string): void {
         if (this.closed || this.editor) return;
@@ -112,13 +115,14 @@ export class MessageView {
         finally { this.busy = false; this.element.querySelectorAll('button').forEach(node => {node.disabled = node.dataset.hostDisabled === 'true';}); }
     }
     private retire(disposal: Promise<void>): void { void disposal.catch(() => {}); this.retired.push(disposal); }
+    setActive(active: boolean): void {this.timing.setActive(active);}
     reveal(): void {
         for (let parent = this.element.parentElement; parent; parent = parent.parentElement)
             if (parent instanceof HTMLDetailsElement) parent.open = true;
         if (this.disclosureEntry) this.disclosure.toggle(this.disclosureEntry, false);
     }
     destroy(): Promise<void> {
-        this.closed = true; this.toolGroups.destroy(); this.stopDisclosure?.();
+        this.closed = true; this.timing.destroy(); this.content.destroy(); this.toolGroups.destroy(); this.stopDisclosure?.();
         return disposeAll([...this.parts.values()].map(part => () => part.destroy()).concat(this.retired.map(task => () => task)));
     }
 }

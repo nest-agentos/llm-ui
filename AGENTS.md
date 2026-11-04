@@ -56,3 +56,6 @@ Consecutive tool messages and adjacent tool parts share ToolOutputGroups disclos
 ## Optional settings entry
 
 `@nestos/llm-ui/settings` owns configuration editors and forms. `createSettingsUI(host)` binds each instance to injected labels, icons, validation/codecs and navigation/resource capabilities. Settings must not import application packages, VFS, backend services or process-global configuration. NestOS integration belongs in `ui/llm-ui-adapter/src/settings/`. Shared lifecycle, autosave and recovery belong in ui-common. The main chat and Flow entries must not load settings or settings styles.
+
+
+消息外框与复制/更多/时间详情统一使用 mdxeditor.ContentView；历史通过 ContentListView 管理可选选区 AI 生命周期，业务工具分组仍由 ToolOutputGroups 布局。时间消费 ChatMessage.timing 的明确事实；旧助手 timestamp 只称记录时间，不能推断完成。生成时钟不触发历史重绘或网络读取，隐藏/销毁释放。OperationRecord.submittedAt 属于冻结提交事实，重试/合并不改写；选区回调仅宿主执行，绑定替换撤销旧回调与选区。

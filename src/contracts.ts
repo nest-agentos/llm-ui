@@ -39,6 +39,7 @@ export interface ChatMessage {
     readonly acceptance?: 'optimistic' | 'confirmed';
     readonly allowed?: readonly ('edit' | 'retry')[];
     readonly timestamp?: number;
+    readonly timing?: {readonly submittedAt?: number; readonly startedAt?: number; readonly completedAt?: number; readonly endedAt?: number; readonly scope?: 'message' | 'turn'};
     /** Presentation scope for tool output across intervening prose; hosts preserve turn boundaries. */
     readonly toolGroupId?: string;
 }
@@ -163,7 +164,7 @@ export interface ComposerArgumentDraft {
     /** Preserve invalid JSON verbatim; it must never fall back to an earlier parsed value. */
     readonly json: string;
 }
-export interface SendPreparation {readonly operationId: string; readonly viewId: string}
+export interface SendPreparation {readonly submittedAt?: number; readonly operationId: string; readonly viewId: string}
 export interface ConversationActions {
     /** Prepare a stable host identity and, when needed, install its retained binding before registration. */
     prepareSend?(input: ChatSubmission, draft: ComposerDraft): Promise<SendPreparation | null>;
@@ -193,6 +194,7 @@ export interface ComposerDraft {
     readonly input?: ComposerArgumentDraft;
 }
 export interface OperationRecord {
+    readonly submittedAt?: number;
     readonly context: OperationContext;
     readonly conversationId: string;
     readonly kind: OperationKind;
@@ -240,6 +242,7 @@ export interface ComposerAttachmentMenuContext {
 }
 export interface ComposerAttachmentMenuAction extends MessageAction {readonly icon?: string}
 export interface ChatOptions {
+    readonly onContentSelection?: (selection: import('@nestos/mdxeditor').ContentSelection, signal: AbortSignal) => Promise<void>;
     /** Enable OCR review by supplying recognition; connection policy stays with the host. */
     readonly ocr?: import('./ocr').OcrPort;
     readonly resolveSubmissionMode?: (draft: ComposerDraft, snapshot: ConversationSnapshot) => NonNullable<ConversationSnapshot['submissionMode']>;

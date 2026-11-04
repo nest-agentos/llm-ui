@@ -94,17 +94,14 @@
 .llm-chat .llm-chat__composer-actions [data-chat-action="cancel"]:hover { background: var(--llm-color-error-hover, #dc2626); }
 .llm-chat .llm-chat__part .mdx-editor-renderer > :last-child, .llm-chat .llm-chat__part .mdx-streaming-block:last-child > :last-child { margin-bottom: var(--mdx-content-end-margin, 0); }
 .llm-chat .llm-chat__message { margin: 0 auto 24px; max-width: var(--llm-chat-width); }
-.llm-chat .llm-chat__message-heading { min-height: 24px; margin-bottom: 8px; font-size: 12px; color: var(--llm-text-secondary, #666); }
-.llm-chat .llm-chat__message-role { flex-shrink: 0; }
 .llm-chat .llm-chat__message[data-role="user"] { display: flex; flex-direction: column; align-items: flex-end; }
-.llm-chat .llm-chat__message[data-role="user"]:not(.is-collapsed) > .llm-chat__message-heading { display: none; }
+
 .llm-chat .llm-chat__message[data-role="user"] > .llm-chat__body {
     width: fit-content; max-width: var(--llm-bubble-max-width, 80%); box-sizing: border-box;
     border-radius: 16px; background: var(--llm-bg-tertiary, #f3f4f6); padding: 12px 16px;
 }
 .llm-chat .llm-chat__message[data-role="assistant"] > .llm-chat__body { padding: 0; }
 .llm-chat .llm-chat__message-actions { gap: 4px; margin-top: 4px; min-height: 32px; }
-.llm-chat .llm-chat__message-time { font-size: 11px; color: var(--llm-text-muted, #9ca3af); margin-inline-end: 4px; }
 .llm-chat .llm-chat__message-more { position: relative; }
 .llm-chat .llm-chat__message-more > summary { padding: 0; list-style: none; cursor: pointer; }
 .llm-chat .llm-chat__message-menu { position: absolute; inset-inline-end: 0; bottom: 100%; z-index: 20; display: flex; gap: 4px; padding: 6px; background: var(--llm-bg-primary, Canvas); border: 1px solid var(--llm-chat-border); border-radius: 8px; box-shadow: 0 4px 16px #0002; }
@@ -173,3 +170,6 @@
         background: var(--llm-bg-primary, Canvas); border: 1px solid var(--llm-border-color, #d8dce3); border-radius: 8px; box-shadow: 0 4px 16px #0002; }
     .llm-chat__composer-actions > button[type="submit"], .llm-chat__composer-actions > [data-chat-action="cancel"] { min-width: 44px; min-height: 44px; }
 }
+
+.llm-chat .llm-chat__message > .mdx-content-view__header { align-self: stretch; width: 100%; box-sizing: border-box; }
+.llm-chat .llm-chat__message { --mdx-content-muted: var(--llm-text-secondary, #666); }

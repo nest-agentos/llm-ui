@@ -845,7 +845,7 @@ it('keeps host parameter forms out of the chat input and never selects the first
     await view.submit(); expect(send).toHaveBeenCalledWith(expect.objectContaining({target, input: expect.objectContaining({signature})}), expect.anything());
 });
 
-it('keeps message timestamps and secondary actions in the footer without changing their frozen target', async () => {
+it('keeps message timing in the shared header and secondary actions tied to their frozen target', async () => {
     const remove = vi.fn(), host = fixture({messageActions: () => [{id: 'delete', label: 'Delete', placement: 'more', run: remove}]});
     host.publish({messages: [{id: 'message', revision: 2, role: 'user', state: 'complete', timestamp: 1700000000000,
         parts: [{id: 'body', kind: 'markdown', text: 'Keep'}]}]});
