@@ -1,8 +1,8 @@
 import type {IConnectionService} from './domain';
-import type {SettingsEditorOptions, SettingsHostContext} from '@itookit/ui-common';
-export type {SettingsEditor as IEditor, SettingsEditor, Heading, UnifiedSearchResult, CollapseExpandResult, EditorEvent, EditorEventMap, EditorEventCallback} from '@itookit/ui-common';
-export {SettingsAutoSave, SettingsValidationError, requestSettingsSave} from '@itookit/ui-common';
-export {Modal, Toast, copyText} from '@itookit/ui-common';
+import type {SettingsEditorOptions, SettingsHostContext} from '@nestos/ui-common';
+export type {SettingsEditor as IEditor, SettingsEditor, Heading, UnifiedSearchResult, CollapseExpandResult, EditorEvent, EditorEventMap, EditorEventCallback} from '@nestos/ui-common';
+export {SettingsAutoSave, SettingsValidationError, requestSettingsSave} from '@nestos/ui-common';
+export {Modal, Toast, copyText} from '@nestos/ui-common';
 export type {BaseSettingsEditor} from '../base-editor';
 export interface SettingsNavigation {
     open(path: string): Promise<void>;

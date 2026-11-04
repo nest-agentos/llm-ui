@@ -2,8 +2,8 @@ import {afterEach, expect, it, vi} from 'vitest';
 import {createChatView, createOperationLedger} from '../src';
 import type {ChatBinding, ChatOptions, ChatView, ComposerDraft, ConversationSnapshot, OperationReceipt} from '../src';
 
-vi.mock('@itookit/mdxeditor', async original => ({
-    ...await original<typeof import('@itookit/mdxeditor')>(),
+vi.mock('@nestos/mdxeditor', async original => ({
+    ...await original<typeof import('@nestos/mdxeditor')>(),
     MDxRenderer: class {
         markedExtensions: unknown[] = []; usePlugin() {return this;}
         async render(node: HTMLElement, text: string) {node.textContent = text;}

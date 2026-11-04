@@ -1,5 +1,5 @@
 import type {Translation} from './contracts';
-import { revealRenderedContent } from '@itookit/mdxeditor';
+import { revealRenderedContent } from '@nestos/mdxeditor';
 import { button, element } from './dom';
 import { translator, type Translate } from './i18n';
 import { clearContentHighlights, highlightContent, type ContentMatch, type SearchContent } from './search-matches';

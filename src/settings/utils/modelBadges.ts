@@ -3,7 +3,7 @@ import type { LLMModel } from '../contracts/domain';
 // @file: llm-ui/utils/modelBadges.ts
 // 模型能力 / 用途分类 badge 渲染辅助。
 // Provider / Connection / Agent 三处 editor 共用，避免重复渲染逻辑。
-// 图标与颜色统一来自 @itookit/common 的 MODEL_CAPABILITY_META / MODEL_CATEGORY_META。
+// 图标与颜色统一来自 @nestos/common 的 MODEL_CAPABILITY_META / MODEL_CATEGORY_META。
 /** 能力键 → LLMModel 字段映射（固定渲染顺序） */
 const CAPABILITY_FIELDS: ReadonlyArray<[
     string,

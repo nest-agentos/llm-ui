@@ -1,5 +1,5 @@
 import type {DisclosureController} from './disclosure';
-import { AssetResolverPlugin, MDxRenderer } from '@itookit/mdxeditor';
+import { AssetResolverPlugin, MDxRenderer } from '@nestos/mdxeditor';
 import type { ChatOptions, MessagePart, MountedRenderer, RenderContext } from './contracts';
 import { element, errorText } from './dom';
 import { markdownOptions } from './content-policy';

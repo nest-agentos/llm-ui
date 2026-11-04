@@ -8,7 +8,7 @@ importers:
 
   .:
     dependencies:
-      '@itookit/mdxeditor':
+      '@nestos/mdxeditor':
         specifier: ^0.5.8
         version: 0.5.8
     devDependencies:
@@ -296,7 +296,7 @@ packages:
   '@iconify/utils@3.1.7':
     resolution: {integrity: sha512-JZHlwdID+dy+lTgbYC8NEC4zeugqeYsc6jewvzb4c58kHauJn+X7rNwQjxz5p2qSjqaEeQoLkCIQ9v/H4PK0/w==}
 
-  '@itookit/mdxeditor@0.5.8':
+  '@nestos/mdxeditor@0.5.8':
     resolution: {integrity: sha512-l/rbzeCxw1qPyNV7IuyklOs2cf4hGTHSLHZrtS4c6x1Vix2EKK0KrrDjJRlJHuDvF1yCL+h+/mcxZmLHBpWytg==}
     engines: {node: '>=20.19.0'}
 
@@ -1900,7 +1900,7 @@ snapshots:
       '@iconify/types': 2.0.0
       import-meta-resolve: 4.2.0
 
-  '@itookit/mdxeditor@0.5.8':
+  '@nestos/mdxeditor@0.5.8':
     dependencies:
       '@codemirror/autocomplete': 6.20.4
       '@codemirror/commands': 6.11.1

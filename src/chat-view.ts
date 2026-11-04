@@ -1,11 +1,11 @@
 import {ToolOutputGroups} from './tool-groups';
 import {ChatOcr} from './ocr';
 import {bindChatScrollRouting} from './chat-scroll-routing';
-import {mountTitleBar as mountSharedTitleBar} from '@itookit/ui-common';
+import {mountTitleBar as mountSharedTitleBar} from '@nestos/ui-common';
 import {DisclosureController} from './disclosure';
 import {isCommandInput} from './commands';
 import { randomUUID } from './random';
-import { DefaultPrintService } from '@itookit/mdxeditor';
+import { DefaultPrintService } from '@nestos/mdxeditor';
 import type { ActionName, ChatMessage, ChatOptions, ChatView, CommandSubmission, ConversationSnapshot, JsonValue,
     MessageTarget, MountedToolbar, OperationContext, OperationReceipt, OperationRecord, ChatBinding, ComposerDraft, BindingDiagnostic, ChatSubmission, SendPreparation } from './contracts';
 import { Composer } from './composer';

@@ -1,4 +1,4 @@
-import '@itookit/mdxeditor/style.css';
+import '@nestos/mdxeditor/style.css';
 import {createChatView} from '../src';
 import {createMemoryHost} from './memory-host';
 

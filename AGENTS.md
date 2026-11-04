@@ -1,6 +1,6 @@
 # llm-ui
 
-独立的原生 DOM Chat + Flow 库，直接运行时依赖为 `@itookit/mdxeditor` 与零依赖的 `@itookit/ui-common`。
+独立的原生 DOM Chat + Flow 库，直接运行时依赖为 `@nestos/mdxeditor` 与零依赖的 `@nestos/ui-common`。
 
 - ChatView 与兼容产品编辑器共用 PromptNavigator、ScrollController、输入回车和高度规则；目录通过 getRows/reveal 注入身份与 DOM，不查询 Session 或执行协议。默认聊天及目录外观归本库，宿主仅注入主题变量、图标和业务插槽。示例为 examples/chat-preview.html。
 
@@ -55,4 +55,4 @@ Consecutive tool messages and adjacent tool parts share ToolOutputGroups disclos
 
 ## Optional settings entry
 
-`@itookit/llm-ui/settings` owns configuration editors and forms. `createSettingsUI(host)` binds each instance to injected labels, icons, validation/codecs and navigation/resource capabilities. Settings must not import application packages, VFS, backend services or process-global configuration. NestOS integration belongs in `ui/llm-ui-adapter/src/settings/`. Shared lifecycle, autosave and recovery belong in ui-common. The main chat and Flow entries must not load settings or settings styles.
+`@nestos/llm-ui/settings` owns configuration editors and forms. `createSettingsUI(host)` binds each instance to injected labels, icons, validation/codecs and navigation/resource capabilities. Settings must not import application packages, VFS, backend services or process-global configuration. NestOS integration belongs in `ui/llm-ui-adapter/src/settings/`. Shared lifecycle, autosave and recovery belong in ui-common. The main chat and Flow entries must not load settings or settings styles.

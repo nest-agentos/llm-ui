@@ -1,6 +1,6 @@
-# @itookit/llm-ui
+# @nestos/llm-ui
 
-独立的原生 DOM LLM 界面库，包含聊天与 Flow。唯一直接运行时依赖为 `@itookit/mdxeditor`；不依赖 MindOS、Session、Kernel、Flow 执行包、VFS、框架或特定传输协议。
+独立的原生 DOM LLM 界面库，包含聊天与 Flow。唯一直接运行时依赖为 `@nestos/mdxeditor`；不依赖 MindOS、Session、Kernel、Flow 执行包、VFS、框架或特定传输协议。
 
 ## npm 与源码消费
 
@@ -18,17 +18,17 @@ pnpm build
 发布制品通过 npm 安装，根入口使用 dist JavaScript 和声明：
 
 ```bash
-pnpm add @itookit/llm-ui @itookit/mdxeditor
+pnpm add @nestos/llm-ui @nestos/mdxeditor
 ```
 
-源码位于 libraries/llm-ui。pnpm 工作区将该目录与应用纳入 packages 后，应用声明 `@itookit/llm-ui: workspace:*`，包 exports 自动指向 src；mdxeditor 也可作为源码工作区提供。无需生成 dist，也无需为 Session、Flow 执行包或其他 MindOS 包设置路径别名。
+源码位于 libraries/llm-ui。pnpm 工作区将该目录与应用纳入 packages 后，应用声明 `@nestos/llm-ui: workspace:*`，包 exports 自动指向 src；mdxeditor 也可作为源码工作区提供。无需生成 dist，也无需为 Session、Flow 执行包或其他 MindOS 包设置路径别名。
 
 源码入口只使用自身相对模块和公开的 mdxeditor 包。外部 Vite/TypeScript 工程也可直接引用 vendored `src/index.ts` 或 `src/flow.ts`，并提供 mdxeditor 依赖；使用支持 TypeScript 与 CSS 的 bundler。构建工具脚本不进入源码运行依赖。
 
 ```ts
-import { createChatView, createOperationLedger } from '@itookit/llm-ui';
-import '@itookit/llm-ui/style.css';
-import '@itookit/mdxeditor/style.css';
+import { createChatView, createOperationLedger } from '@nestos/llm-ui';
+import '@nestos/llm-ui/style.css';
+import '@nestos/mdxeditor/style.css';
 
 // Keep the ledger in the host, beyond any individual view.
 const operations = createOperationLedger();
@@ -42,7 +42,7 @@ await view.flushDraft();
 await view.destroy();
 ```
 
-可运行的内存宿主组合见 [memory-host.ts](./examples/memory-host.ts)。它演示快照发布、提交值捕获、选择器、资源候选及 toolbar 的 update/destroy。MindOS 的 Session 和原生会话接入位于 `@itookit/llm-ui-adapter/independent`。
+可运行的内存宿主组合见 [memory-host.ts](./examples/memory-host.ts)。它演示快照发布、提交值捕获、选择器、资源候选及 toolbar 的 update/destroy。MindOS 的 Session 和原生会话接入位于 `@nestos/llm-ui-adapter/independent`。
 
 标题栏提供“搜索内容”按钮，查找当前会话已加载的消息正文、思考、工具文本和附件名。搜索忽略大小写，支持匹配计数、高亮及上一项/下一项定位；视图内按 Ctrl/Cmd+F 打开，搜索框内按 Enter/Shift+Enter 切换，Esc 关闭。流式更新和加载更早消息后刷新结果；不会自动加载未展示的历史，不检索草稿或宿主自定义 renderer 内部内容。
 
@@ -81,8 +81,8 @@ ChatView 自带输入卡片、右侧用户气泡、工具栏、提问目录和�
 可独立复用参数表单，不必加载聊天或连接执行服务：
 
 ```ts
-import { renderParameterFields, readParameterFields } from '@itookit/llm-ui/forms';
-import '@itookit/llm-ui/forms.css';
+import { renderParameterFields, readParameterFields } from '@nestos/llm-ui/forms';
+import '@nestos/llm-ui/forms.css';
 
 const fields = [{ name: 'limit', type: 'number', minimum: 1, default: 10 }] as const;
 container.innerHTML = renderParameterFields(fields, { mode: 'defaults' });
@@ -108,8 +108,8 @@ await view.setFlowEnabled(true);
 禁用隐藏入口并释放 Flow 视图，不取消后台执行。启用必须提供 flow 绑定；可在初始化时传入绑定但保持关闭。也可直接通过可选子入口单独创建 Flow 视图：
 
 ```ts
-import { createFlowView, createOperationLedger } from '@itookit/llm-ui/flow';
-import '@itookit/llm-ui/flow.css';
+import { createFlowView, createOperationLedger } from '@nestos/llm-ui/flow';
+import '@nestos/llm-ui/flow.css';
 
 const flow = await createFlowView(container, {
     source: flowSource,
@@ -164,9 +164,9 @@ UI 不解析 LLMConnection、MCP connection 或 harness 的内部配置。宿主
 ## 验证
 
 ```bash
-pnpm --filter @itookit/llm-ui typecheck
-pnpm --filter @itookit/llm-ui test
-pnpm --filter @itookit/llm-ui build
+pnpm --filter @nestos/llm-ui typecheck
+pnpm --filter @nestos/llm-ui test
+pnpm --filter @nestos/llm-ui build
 ```
 
 构建检查源码、JavaScript、声明和发布出口。工作区使用源码入口，发布 tarball 使用 dist 入口；消费类型使用 TypeScript bundler 解析。浏览器样式由宿主显式导入。
@@ -187,7 +187,7 @@ ChatBinding 的 `setActive?(active)` 和 `release?()` 由库调用；初始化�
 
 `InputPluginRegistry` 提供有序注册和编辑钩子，ChatOptions.plugins 可直接接入 Composer。`PopupPanel` 是候选列表的共享视图，位置与业务选项由宿主提供；关闭视图必须调用 destroy。`DisclosureController` 管理折叠状态、批量操作及视口导航；ChatView.setAllCollapsed 可控制已加载消息部件。`TtyPanel` 只展示有界输出与实际退出码，不拥有进程。DOMCache、事件清理和滚动工具从根入口导入。
 
-`@itookit/llm-ui/flow` 导出 GraphCanvas，用展示节点、端口和边接入拖拽与连线；回调捕获展示修订，隐藏或销毁取消在途手势。`@itookit/llm-ui/forms` 导出 SchemaForm，与 ParameterForm 共用叶字段渲染和读取；表达式只通过 acceptValue 注入。分别导入 flow.css/forms.css 使用独立样式。
+`@nestos/llm-ui/flow` 导出 GraphCanvas，用展示节点、端口和边接入拖拽与连线；回调捕获展示修订，隐藏或销毁取消在途手势。`@nestos/llm-ui/forms` 导出 SchemaForm，与 ParameterForm 共用叶字段渲染和读取；表达式只通过 acceptValue 注入。分别导入 flow.css/forms.css 使用独立样式。
 
 产品可设 `inputPresentation: 'host'`，由既有宿主准备流程打开参数表单，输入区不展开 JSON 编辑器；独立视图默认保留内联编辑。目录 `autoSelectFirst: false` 要求宿主恢复偏好或用户明确选择，不自动选择首项。
 
@@ -201,6 +201,6 @@ Consecutive tool messages and consecutive tool parts within a mixed assistant me
 
 ## Optional settings
 
-Import `createSettingsUI` from `@itookit/llm-ui/settings` and styles from `@itookit/llm-ui/settings.css`. The factory returns constructors for Agent, Provider, Connection, MCP, Skill, SystemPrompt, ModelDefaults and Cost editors, plus OCR configuration fields. Each factory has its own presentation and callback context.
+Import `createSettingsUI` from `@nestos/llm-ui/settings` and styles from `@nestos/llm-ui/settings.css`. The factory returns constructors for Agent, Provider, Connection, MCP, Skill, SystemPrompt, ModelDefaults and Cost editors, plus OCR configuration fields. Each factory has its own presentation and callback context.
 
 Supply a `SettingsHost` with translations, trusted icons, validation/config codecs and optional option preparation. Editors receive structural service ports; `SettingsEditorOptions` accepts navigation, one-shot anchor hints, resource rename/metadata callbacks and host slots. No backend, VFS, routing or storage policy is bundled. Credential storage notices and icon choices are optional host presentation. Server-side publication and revision checks stay in the supplied service. The main Chat/Flow entries do not load settings.

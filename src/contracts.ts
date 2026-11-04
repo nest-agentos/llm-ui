@@ -1,4 +1,4 @@
-import type { AssetProvider, MDxPlugin } from '@itookit/mdxeditor';
+import type { AssetProvider, MDxPlugin } from '@nestos/mdxeditor';
 import type { FlowOptions } from './flow-contracts';
 
 export type JsonValue = null | boolean | number | string | readonly JsonValue[]

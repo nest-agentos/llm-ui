@@ -1,5 +1,5 @@
 @import './ocr.css';
-@import '@itookit/ui-common/navigation.css';
+@import '@nestos/ui-common/navigation.css';
 @import './tty-panel.css';
 @import './popup.css';
 @import './flow.css';

@@ -3,8 +3,8 @@ import { createChatView, createOperationLedger, composeCommandCatalogs } from '.
 import type { ChatOptions, ChatView, ConversationSnapshot, OperationReceipt, OperationRecord } from '../src';
 
 const destroyed = vi.hoisted(() => vi.fn());
-vi.mock('@itookit/mdxeditor', async importOriginal => ({
-    ...await importOriginal<typeof import('@itookit/mdxeditor')>(),
+vi.mock('@nestos/mdxeditor', async importOriginal => ({
+    ...await importOriginal<typeof import('@nestos/mdxeditor')>(),
     AssetResolverPlugin: class {},
     MDxRenderer: class {
         markedExtensions: unknown[] = [];

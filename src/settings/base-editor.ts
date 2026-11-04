@@ -1,5 +1,5 @@
 import {randomUUID} from './identity';
-import {SettingsBaseEditor} from '@itookit/ui-common';
+import {SettingsBaseEditor} from '@nestos/ui-common';
 import type {SettingsRuntime} from './runtime';
 import type {EditorOptions} from './contracts/editor';
 export abstract class BaseSettingsEditor<T> extends SettingsBaseEditor<T,EditorOptions> {

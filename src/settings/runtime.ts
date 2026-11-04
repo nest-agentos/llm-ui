@@ -1,5 +1,5 @@
-import {Modal,Toast,copyText,SettingsAutoSave,SettingsValidationError,requestSettingsSave} from '@itookit/ui-common';
-import type {SettingsTranslate} from '@itookit/ui-common';
+import {Modal,Toast,copyText,SettingsAutoSave,SettingsValidationError,requestSettingsSave} from '@nestos/ui-common';
+import type {SettingsTranslate} from '@nestos/ui-common';
 import {editorResourceId,type EditorOptions} from './contracts/editor';
 import type {SettingsRules} from './contracts/rules';
 export interface SettingsDiagnosticLogger {debug(event:string,details?:unknown):void;info(event:string,details?:unknown):void;warn(event:string,details?:unknown):void;error(event:string,details?:unknown):void}

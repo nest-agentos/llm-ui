@@ -6,8 +6,8 @@ import ts from 'typescript';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const manifest = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
-assert.deepEqual(Object.keys(manifest.dependencies).sort(), ['@itookit/mdxeditor', '@itookit/ui-common']);
-assert.match(manifest.dependencies['@itookit/mdxeditor'], /^\^?\d+\.\d+\.\d+$/);
+assert.deepEqual(Object.keys(manifest.dependencies).sort(), ['@nestos/mdxeditor', '@nestos/ui-common']);
+assert.match(manifest.dependencies['@nestos/mdxeditor'], /^\^?\d+\.\d+\.\d+$/);
 for (const key of ['peerDependencies', 'optionalDependencies']) assert.equal(Object.keys(manifest[key] ?? {}).length, 0);
 assert.deepEqual(Object.keys(manifest.exports).sort(), ['.', './flow', './flow.css', './forms', './forms.css', './settings', './settings.css', './style.css']);
 for (const [name, target] of Object.entries(manifest.publishConfig.exports)) {
@@ -35,7 +35,7 @@ function specifiers(text, filename) {
 for (const folder of ['src', 'dist']) for (const file of files(resolve(root, folder))) {
     for (const name of specifiers(readFileSync(file, 'utf8'), file)) {
         if (name.startsWith('.')) assert.ok(resolve(dirname(file), name).startsWith(root + '/'), `Escaped package: ${file} -> ${name}`);
-        else assert.ok(['@itookit/mdxeditor', '@itookit/ui-common'].includes(name), `Unexpected dependency: ${file} -> ${name}`);
+        else assert.ok(['@nestos/mdxeditor', '@nestos/ui-common'].includes(name), `Unexpected dependency: ${file} -> ${name}`);
     }
 }
 process.stdout.write('Independent llm-ui source, JavaScript, declarations and exports only depend on mdxeditor and ui-common.\n');
