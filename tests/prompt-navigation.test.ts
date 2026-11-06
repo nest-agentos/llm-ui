@@ -59,3 +59,11 @@ it.each(['missing', 'throwing'])('isolates panel identities when native UUID is 
     expect(first.view.isVisible).toBe(false); expect(second.view.isVisible).toBe(true);
     first.view.destroy(); expect(second.view.isVisible).toBe(true);
 });
+it('uses host window names while continuing to search full prompt text', () => {
+    const f = fixture(1); f.view.update([{id: 'question-0', name: '12:00 · Short summary', text: 'Hidden search needle after full long prompt'}]); f.trigger.click();
+    expect(f.button('[data-prompt-id]').textContent).toContain('12:00 · Short summary');
+    const input = f.root.querySelector<HTMLInputElement>('input')!; input.value = 'needle'; input.dispatchEvent(new Event('input'));
+    expect(f.button('[data-prompt-id]').dataset.promptId).toBe('question-0');
+    f.view.update([{id: 'question-0', name: '13:00 · Renamed summary', text: 'Hidden search needle after full long prompt'}]);
+    expect(f.button('[data-prompt-id]').textContent).toContain('13:00 · Renamed summary');
+});

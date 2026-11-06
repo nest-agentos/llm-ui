@@ -27,6 +27,7 @@ const zh = {
     promptClose: '关闭提问目录', promptSearch: '搜索提问', promptFirst: '开头', promptMiddle: '中间', promptLast: '最近',
     promptPreview: '三行预览', promptMore: '显示更多', promptLoadedOnly: '仅显示已加载历史中的提问',
     promptAttachment: '附件提问', promptEmpty: '没有匹配的提问', promptNoLoaded: '已加载历史中没有提问',
+    promptUnavailable: '目标窗口已不可用，请刷新目录后重试',
     promptLoading: '正在加载更早历史', promptCount: '{count} / {total}',
 };
 const en: Record<keyof typeof zh, string> = {
@@ -57,6 +58,7 @@ const en: Record<keyof typeof zh, string> = {
     promptClose: 'Close questions', promptSearch: 'Search questions', promptFirst: 'First', promptMiddle: 'Middle', promptLast: 'Latest',
     promptPreview: 'Three-line preview', promptMore: 'Show more', promptLoadedOnly: 'Questions from loaded history only',
     promptAttachment: 'Attachment question', promptEmpty: 'No matching questions', promptNoLoaded: 'No questions in loaded history',
+    promptUnavailable: 'The window is unavailable. Refresh the contents and retry.',
     promptLoading: 'Loading earlier history', promptCount: '{count} / {total}',
 };
 export type Translate = (key: keyof typeof zh, parameters?: TranslationParameters) => string;

@@ -82,9 +82,6 @@
 .llm-prompt-nav__list { overflow-y: auto; overscroll-behavior: contain; flex: 1 1 auto; min-height: 80px; padding: 0 6px 6px; scrollbar-width: thin; }
 .llm-prompt-nav .llm-prompt-nav__item { display: flex; align-items: baseline; gap: 10px; width: 100%; padding: 10px 8px; text-align: start; }
 .llm-prompt-nav__item[aria-current="location"] { background: var(--llm-prompt-selected); color: var(--llm-prompt-accent); }
-.llm-prompt-nav__number { width: 26px; flex-shrink: 0; color: var(--llm-prompt-muted); font-size: 11px; text-align: end; font-variant-numeric: tabular-nums; }
-.llm-prompt-nav__text { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; line-height: 1.65; }
-.llm-prompt-nav--expanded .llm-prompt-nav__text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; white-space: normal; overflow-wrap: anywhere; }
 .llm-prompt-nav__footer { border-top: 1px solid var(--llm-prompt-border); padding: 6px 12px; color: var(--llm-prompt-muted); font-size: 12px; }
 .llm-prompt-nav__scope, .llm-prompt-nav__empty { padding: 8px 14px; margin: 0; color: var(--llm-prompt-muted); line-height: 1.5; }
 .llm-prompt-nav [data-action="earlier"] { align-self: flex-start; margin: 0 8px 8px; color: var(--llm-prompt-accent); }
@@ -104,3 +101,7 @@
 @media (prefers-reduced-motion: reduce) {
     .llm-prompt-nav-target { animation: none; outline: 1px solid var(--llm-prompt-accent); }
 }
+
+.llm-prompt-nav .ui-outline__link { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.llm-prompt-nav--expanded .ui-outline__link { white-space: normal; overflow-wrap: anywhere; }
+.llm-prompt-nav .ui-outline button { min-height: 44px; }

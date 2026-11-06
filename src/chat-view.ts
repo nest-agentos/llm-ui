@@ -361,8 +361,8 @@ export class ChatController implements ChatView {
                 const message = previews.get(record.context.operationId); return message ? [message] : [];
             });
         this.syncMessages([...messages, ...temporary]);
-        this.navigation.update(messages.filter(message => message.role === 'user').map(message => ({id: message.id,
-            text: message.parts.flatMap(part => part.kind === 'markdown' ? [part.text] : []).join(' ')})));
+        this.navigation.update(this.contentList.getOutline().map(item => ({id: item.id, name: item.label,
+            text: this.rows.get(item.id)!.message.parts.flatMap(part => part.kind === 'markdown' ? [part.text] : []).join(' ')})));
         this.updateEarlierNavigation();
     }
     private syncMessages(messages: readonly ChatMessage[]): void {
@@ -374,9 +374,15 @@ export class ChatController implements ChatView {
             tools: message.role === 'tool' || message.parts.length > 0 && message.parts.every(part => part.kind === 'tool')
                 ? message.parts.filter((part): part is Extract<typeof part, {kind: 'tool'}> => part.kind === 'tool') : undefined,
             continuation: message.role === 'assistant' && message.parts.length > 0 && message.parts.every(part => part.kind === 'reasoning')})), this.snapshot.conversationId);
-        this.contentList.sync(messages.map(message => ({id: message.id, view: this.rows.get(message.id)!.view.content})));
+        this.contentList.sync(messages.map(message => ({id: message.id, view: this.rows.get(message.id)!.view.content, outlineName: this.windowName(message)})));
         this.follow();
         this.search.refresh();
+    }
+    private windowName(message: ChatMessage): string | undefined {
+        if (message.role !== 'user') return undefined;
+        const time = message.timing?.submittedAt ?? message.timestamp;
+        const summary = message.parts.flatMap(part => part.kind === 'markdown' ? [part.text] : []).join(' ').replace(/\s+/g, ' ').slice(0, 160);
+        return [time ? new Date(time).toLocaleString(this.options.locale) : '', summary || this.t('promptAttachment')].filter(Boolean).join(' · ');
     }
     private messageRow(message: ChatMessage) {
         let row = this.rows.get(message.id);

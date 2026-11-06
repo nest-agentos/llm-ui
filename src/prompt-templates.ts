@@ -1,6 +1,4 @@
 import type {Translate} from './i18n';
-import {getPreviewText} from './text-preview';
-import type { PromptNavigationItem } from './prompt-navigation';
 import {escapeHTML} from './html';
 
 export const PromptNavigationTemplates = {
@@ -21,10 +19,4 @@ export const PromptNavigationTemplates = {
         </footer>
         <p class="llm-prompt-nav__scope" hidden></p>
         <button type="button" data-action="earlier" hidden></button>`,
-    item: (item: PromptNavigationItem, ordinal: number, active: boolean, t: Translate): string => `
-        <button type="button" class="llm-prompt-nav__item" data-prompt-id="${escapeHTML(item.id)}" ${active ? 'aria-current="location"' : ''}>
-            <span class="llm-prompt-nav__number">${ordinal}</span>
-            <span class="llm-prompt-nav__text">${escapeHTML(getPreviewText(item.text, 300) || t('promptAttachment'))}</span>
-        </button>`,
-    empty: (key: 'promptEmpty' | 'promptNoLoaded' | 'promptLoading', t: Translate): string => `<p class="llm-prompt-nav__empty">${escapeHTML(t(key))}</p>`,
 };

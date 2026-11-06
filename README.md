@@ -211,3 +211,5 @@ Supply a `SettingsHost` with translations, trusted icons, validation/config code
 消息外框复用 mdxeditor 的 ContentView，历史通过 ContentListView 保留稳定 DOM；工具分组、权限与消息分页仍由 ChatView 管理。正文仍按稳定 part 持有 MDxRenderer，流式更新不重建外框。可选 `onContentSelection(selection, signal)` 将单项或跨项选区交给宿主，库只展示 AI 入口，不持有 Session 服务。
 
 `ChatMessage.timing` 可提供 `submittedAt`、`startedAt`、`completedAt`、失败/取消的 `endedAt`，单位为 Unix 毫秒；`scope: 'message' | 'turn'` 区分响应耗时与整轮耗时。用户显示发送时间，助手终态显示完成/失败/停止时间，生成期间仅更新状态时钟；隐藏时停止时钟，时间不表示执行存活。缺失完成时间不补造，旧 `timestamp` 对助手仅标为“记录于”；点击时间可查看完整日期。宿主 OperationRecord 的 submittedAt 随冻结提交保存，准备耗时、重试、正式消息替换不能重置发送时间。
+
+提问目录的行视图和键盘导航复用 ui-common `OutlineView`，窗口身份由 mdxeditor `ContentListView` 管理。宿主仅为用户消息提供“提交时间（缺失时使用记录时间）+ 提问摘要”的可选名称；助手回复不进入窗口索引。名称更新不替换消息 ID、内容框或编辑状态，搜索及更早历史仍沿用明确操作。

@@ -1,3 +1,5 @@
+import {OutlineView} from '@nestos/ui-common';
+import {getPreviewText} from './text-preview';
 import {randomUUID} from './random';
 import {translator, type Translate} from './i18n';
 import { EventCleanup } from './events';
@@ -5,7 +7,7 @@ import { PromptNavigationTemplates as templates } from './prompt-templates';
 import {presentButton} from './dom';
 import type {Translation} from './contracts';
 
-export interface PromptNavigationItem { id: string; text: string }
+export interface PromptNavigationItem { id: string; text: string; name?: string }
 export interface PromptNavigationOptions {
     readonly root: HTMLElement;
     readonly history: HTMLElement;
@@ -24,6 +26,7 @@ const INITIAL_COUNT = 100;
 /** A bounded, read-only index of user prompts, independent of execution and branch commands. */
 export class PromptNavigator {
     private readonly panel = document.createElement('section');
+    private readonly outline: OutlineView;
     private readonly events = new EventCleanup();
     private readonly trigger: HTMLButtonElement;
     private items: PromptNavigationItem[] = [];
@@ -46,6 +49,10 @@ export class PromptNavigator {
         this.trigger.setAttribute('aria-controls', this.panel.id);
         this.panel.setAttribute('role', 'region'); this.panel.setAttribute('aria-label', this.t('prompts'));
         this.panel.innerHTML = templates.shell(this.t); workspace.append(this.panel);
+        this.outline = new OutlineView({label: this.t('prompts'), emptyLabel: this.t('promptEmpty'), errorLabel: this.t('promptUnavailable'),
+            expandLabel: this.t('prompts'), collapseLabel: this.t('promptClose'), select: id => this.select(id),
+            onDiagnostic: event => {console[event.result === 'failure' ? 'warn' : 'debug']('[PromptOutline]', event);}});
+        this.panel.querySelector('.llm-prompt-nav__list')!.append(this.outline.element);
         for (const action of ['close', 'preview']) {
             const button = this.panel.querySelector<HTMLButtonElement>(`[data-action="${action}"]`)!;
             presentButton(button, action, options.presentButton);
@@ -75,7 +82,7 @@ export class PromptNavigator {
 
     update(items: PromptNavigationItem[]): void {
         if (this.destroyed) return;
-        const changed = items.length !== this.items.length || items.some((item, index) => item.id !== this.items[index]?.id || item.text !== this.items[index]?.text);
+        const changed = items.length !== this.items.length || items.some((item, index) => item.id !== this.items[index]?.id || item.text !== this.items[index]?.text || item.name !== this.items[index]?.name);
         this.items = items;
         if (!changed) return;
         this.filter();
@@ -125,9 +132,11 @@ export class PromptNavigator {
         const focusedId = (document.activeElement as HTMLElement)?.closest<HTMLElement>('[data-prompt-id]')?.dataset.promptId;
         const top = list.scrollTop;
         const visible = this.filtered.slice(0, this.visibleCount);
-        const ordinals = new Map(this.items.map((item, index) => [item.id, index + 1]));
         const empty = this.loading ? 'promptLoading' : this.hasEarlier && !this.query ? 'promptNoLoaded' : 'promptEmpty';
-        list.innerHTML = visible.map(item => templates.item(item, ordinals.get(item.id)!, item.id === this.activeId, this.t)).join('') || templates.empty(empty, this.t);
+        this.outline.update(visible.map(item => ({id: item.id, label: getPreviewText(item.name ?? item.text, 300) || this.t('promptAttachment')})));
+        this.outline.element.querySelectorAll<HTMLButtonElement>('[data-outline-id]').forEach(button => {button.dataset.promptId = button.dataset.outlineId; button.classList.add('llm-prompt-nav__item');});
+        if (!visible.length) {const hint = this.outline.element.querySelector('p:last-child')!; hint.classList.add('llm-prompt-nav__empty'); hint.textContent = this.t(empty);}
+        this.highlight();
         this.panel.querySelector<HTMLElement>('.llm-prompt-nav__range')!.textContent = this.t('promptCount', {count: visible.length, total: this.filtered.length});
         this.panel.querySelector<HTMLButtonElement>('[data-action="more"]')!.hidden = visible.length >= this.filtered.length;
         this.panel.querySelectorAll<HTMLButtonElement>('[data-jump]').forEach(button => { button.disabled = !this.filtered.length; });
@@ -138,7 +147,7 @@ export class PromptNavigator {
     private click(event: Event): void {
         const target = (event.target as Element).closest<HTMLButtonElement>('button');
         if (!target) return;
-        if (target.dataset.promptId) { this.select(target.dataset.promptId); return; }
+        if (target.dataset.promptId) return;
         if (target.dataset.jump) { this.jump(target.dataset.jump); return; }
         this.action(target.dataset.action ?? '');
     }
@@ -164,7 +173,7 @@ export class PromptNavigator {
     }
 
     private select(id: string): void {
-        const target = this.options.reveal(id); if (!target) return;
+        const target = this.options.reveal(id); if (!target) throw new Error('OUTLINE_TARGET_UNAVAILABLE');
         this.activeId = id; this.highlight();
         const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
         const offset = target.getBoundingClientRect().top - this.history.getBoundingClientRect().top - 16;
@@ -202,19 +211,15 @@ export class PromptNavigator {
 
     private keydown(event: KeyboardEvent): void {
         if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); this.close(); return; }
-        const keys = ['ArrowDown', 'ArrowUp', 'Home', 'End'];
-        if (!keys.includes(event.key) || event.altKey || event.ctrlKey || event.metaKey) return;
-        const input = event.target instanceof HTMLInputElement;
-        if (input && event.key !== 'ArrowDown') return;
-        const rows = [...this.panel.querySelectorAll<HTMLButtonElement>('[data-prompt-id]')];
-        const index = rows.indexOf(document.activeElement as HTMLButtonElement);
-        const next = event.key === 'Home' ? 0 : event.key === 'End' ? rows.length - 1 : Math.max(0, Math.min(rows.length - 1, index + (event.key === 'ArrowUp' ? -1 : 1)));
-        if (rows[next]) { event.preventDefault(); rows[next].focus(); rows[next].scrollIntoView?.({block: 'nearest'}); }
+        if (event.target instanceof HTMLInputElement && event.key === 'ArrowDown') {
+            const first = this.outline.element.querySelector<HTMLButtonElement>('[data-outline-id]');
+            if (first) {event.preventDefault(); first.focus();}
+        }
     }
 
     destroy(): void {
         if (this.destroyed) return;
-        this.destroyed = true; this.events.cleanup();
+        this.destroyed = true; this.events.cleanup(); this.outline.destroy();
         if (this.frame !== undefined) cancelAnimationFrame(this.frame);
         this.trigger.setAttribute('aria-expanded', 'false'); this.trigger.removeAttribute('aria-controls'); this.panel.remove();
         this.history.querySelectorAll('.llm-prompt-nav-target').forEach(row => row.classList.remove('llm-prompt-nav-target'));
