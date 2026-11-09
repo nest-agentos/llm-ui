@@ -8,9 +8,9 @@ export interface InstructionQueueSnapshot {
     recovery?: {id: string; required?: boolean};
     ownerId: string; revision: number; paused: boolean; reason?: string;
     items: Array<{id: string; text: string; state: InstructionState; agentId?: string; targetLabel?: string; input?: JsonValue;
-        textEditable?: boolean; files: Array<{name: string}>; error?: string; createdAt?: number; dispatchedAt?: number; acceptedAt?: number}>;
+        observation?: {lastProgressAt: number; code?: string; stopping?: boolean}; textEditable?: boolean; files: Array<{name: string}>; error?: string; createdAt?: number; dispatchedAt?: number; acceptedAt?: number}>;
 }
-export type InstructionQueueChange = {action: 'pause' | 'resume'} | {action: 'remove' | 'retry' | 'recover'; id: string}
+export type InstructionQueueChange = {action: 'pause' | 'resume'} | {action: 'remove' | 'retry' | 'recover'; id: string} | {action: 'check'; id: string} | {action: 'stop'; id: string}
     | {action: 'update'; id: string; text: string} | {action: 'update-input'; id: string; value: JsonValue; text: string}
     | {action: 'reorder' | 'merge'; ids: string[]};
 export type InstructionQueueEdit = InstructionQueueChange & {expectedRevision: number};
@@ -18,9 +18,12 @@ export interface InstructionQueueViewOptions {
     ownerId: string;
     locale?: string;
     initiallyCollapsed?: boolean;
+    attentionAfterMs?: number;
+    executionControl?: boolean;
+    sessionHref?: string;
     toggleIcon?: string;
     labels: Record<'title' | 'resume' | 'pause' | 'merge' | 'paused' | 'hint' | 'attachments' | 'up' | 'down' | 'retry'
-        | 'edit' | 'editFailed' | 'save' | 'cancel' | 'remove', string> & {states: Record<InstructionState, string>; reasons?: Record<string, string>; arguments?: string; invalidArguments?: string; createdAt?: string; dispatchedAt?: string; acceptedAt?: string; expand?: string; collapse?: string; recover?: string; confirmRecovery?: string; recovered?: string; recoveryRequired?: string};
+        | 'edit' | 'editFailed' | 'save' | 'cancel' | 'remove', string> & {states: Record<InstructionState, string>; reasons?: Record<string, string>; arguments?: string; invalidArguments?: string; createdAt?: string; dispatchedAt?: string; acceptedAt?: string; expand?: string; collapse?: string; recover?: string; confirmRecovery?: string; recovered?: string; recoveryRequired?: string; needsCheck?: string; stalled?: string; check?: string; stop?: string; confirmStop?: string; stopping?: string; lastProgress?: string; openSession?: string};
     removeIcon?: string;
     edit(change: InstructionQueueEdit): Promise<InstructionQueueSnapshot>;
     read(): Promise<InstructionQueueSnapshot>;
@@ -33,6 +36,8 @@ function escapeHTML(value: string): string {
 
 /** A projection and command editor; dispatch belongs exclusively to the Session backend. */
 export class InstructionQueueView {
+    private attentionTimer?: ReturnType<typeof setTimeout>;
+    private stopConfirmation?: {id: string; revision: number};
     private recoveryConfirmation?: {id: string; revision: number; operationId: string};
     private queue?: InstructionQueueSnapshot;
     private editing?: {id: string; text: string; input?: string; revision: number};
@@ -66,10 +71,12 @@ export class InstructionQueueView {
 
     update(queue?: InstructionQueueSnapshot): void {
         if (this.closed || !queue || queue.ownerId !== this.options.ownerId || this.queue && (queue.revision < this.queue.revision
-            || queue.revision === this.queue.revision && queue.reason === this.queue.reason && queue.recovery?.id === this.queue.recovery?.id && queue.recovery?.required === this.queue.recovery?.required)) return;
+            || queue.revision === this.queue.revision && queue.reason === this.queue.reason && queue.recovery?.id === this.queue.recovery?.id && queue.recovery?.required === this.queue.recovery?.required && JSON.stringify(queue.items.map(item => item.observation)) === JSON.stringify(this.queue.items.map(item => item.observation)))) return;
         if (this.recoveryConfirmation && (this.recoveryConfirmation.revision !== queue.revision || this.recoveryConfirmation.id !== queue.recovery?.id))
             {this.diagnose(this.recoveryConfirmation.operationId, 'recover', 'confirmation_invalidated', 'failure', this.recoveryConfirmation.id, 0, 'QUEUE_CHANGED', queue.revision); this.recoveryConfirmation = undefined;}
-        this.queue = this.queue?.revision === queue.revision ? {...this.queue, reason: queue.reason, recovery: queue.recovery} : queue;
+        if (this.stopConfirmation?.revision !== queue.revision) this.stopConfirmation = undefined;
+        this.queue = this.queue?.revision === queue.revision ? {...this.queue, reason: queue.reason, recovery: queue.recovery,
+            items: this.queue.items.map(item => ({...item, observation: queue.items.find(row => row.id === item.id)?.observation}))} : queue;
         for (const id of this.selected) if (!this.queue.items.some(item => item.id === id && item.state === 'pending')) this.selected.delete(id);
         this.render();
     }
@@ -83,6 +90,7 @@ export class InstructionQueueView {
     private render(): void {
         const queue = this.queue;
         if (!queue) return;
+        this.scheduleAttention(queue);
         this.element.hidden = this.hidden(queue);
         this.element.setAttribute('aria-label', this.options.labels.title);
         const focus = document.activeElement instanceof HTMLTextAreaElement && this.element.contains(document.activeElement) ? document.activeElement : null;
@@ -100,10 +108,10 @@ export class InstructionQueueView {
         const state = queue.items.some(item => item.state === 'uncertain') ? 'uncertain'
             : queue.items.some(item => item.state === 'failed') ? 'failed'
             : queue.items.some(item => item.state === 'pending') ? 'pending' : 'dispatching';
-        const status = this.error ? this.options.labels.editFailed : queue.recovery?.required && this.options.labels.recoveryRequired ? this.options.labels.recoveryRequired : ['failed', 'uncertain'].includes(state)
+        const status = this.attention(queue) ? this.options.labels.needsCheck ?? this.options.labels.states.uncertain : this.error ? this.options.labels.editFailed : queue.recovery?.required && this.options.labels.recoveryRequired ? this.options.labels.recoveryRequired : ['failed', 'uncertain'].includes(state)
             ? this.options.labels.states[state] : queue.reason && this.options.labels.reasons?.[queue.reason]
                 || (queue.paused ? this.options.labels.paused : this.options.labels.states[state]);
-        this.element.dataset.attention = String(!!this.error || !!queue.recovery?.required || ['failed', 'uncertain'].includes(state));
+        this.element.dataset.attention = String(this.attention(queue) || !!this.error || !!queue.recovery?.required || ['failed', 'uncertain'].includes(state));
         return `<button type="button" class="llm-instruction-queue__toggle" data-action="toggle" aria-controls="${this.bodyId}">
             ${this.options.toggleIcon ?? ''}<strong>${escapeHTML(this.options.labels.title)} · ${queue.items.length}</strong>
             <span class="llm-instruction-queue__status" aria-live="polite">${escapeHTML(status)}</span></button>
@@ -124,7 +132,7 @@ export class InstructionQueueView {
     }
 
     private hidden(queue: InstructionQueueSnapshot): boolean {
-        return !this.error && !queue.recovery && (!queue.items.length && !queue.recoveries?.length || queue.items.length === 1 && queue.items[0].state === 'dispatching' && !queue.paused);
+        return !this.attention(queue) && !this.error && !queue.recovery && (!queue.items.length && !queue.recoveries?.length || queue.items.length === 1 && queue.items[0].state === 'dispatching' && !queue.paused);
     }
     private markup(queue: InstructionQueueSnapshot): string {
         return `<header>
@@ -132,6 +140,7 @@ export class InstructionQueueView {
             ${this.button('merge', this.options.labels.merge, this.selected.size < 2)}</header>
             <p class="llm-instruction-queue__hint">${escapeHTML(queue.paused && queue.recoveries?.length && this.options.labels.recovered ? this.options.labels.recovered : queue.paused ? this.options.labels.paused : this.options.labels.hint)}</p>
             ${queue.reason ? `<p class="llm-instruction-queue__reason">${escapeHTML(this.options.labels.reasons?.[queue.reason] ?? queue.reason)}</p>` : ''}
+            ${this.attentionMarkup(queue)}
             <ol>${queue.items.map((item, index) => this.row(item, index)).join('')}</ol>
             <p class="llm-instruction-queue__error" role="alert">${escapeHTML(this.error)}</p>`;
     }
@@ -182,14 +191,48 @@ export class InstructionQueueView {
         if (action === 'toggle') {this.toggle(); return;}
         if (this.collapsed) return;
         if (this.editAction(action, id)) return;
+        if (action === 'stop' && id) {this.stop(id); return;}
         if (action === 'recover' && id) {this.recover(id); return;}
         switch (action) {
             case 'up': case 'down': this.move(id!, action); break;
             case 'merge': void this.edit({action, ids: [...this.selected]}); break;
             case 'pause': case 'resume': void this.edit({action}); break;
-            case 'remove': case 'retry': void this.edit({action, id: id!}); break;
+            case 'check': case 'remove': case 'retry': void this.edit({action, id: id!}); break;
         }
     }
+    private stop(id: string): void {
+        if (this.stopConfirmation?.id !== id || this.stopConfirmation.revision !== this.queue!.revision) {
+            this.stopConfirmation = {id, revision: this.queue!.revision}; this.render(); return;
+        }
+        this.stopConfirmation = undefined;
+        void this.edit({action: 'stop', id});
+    }
+    private attention(queue: InstructionQueueSnapshot): boolean {
+        const head = queue.items[0];
+        if (!head || !['dispatching', 'uncertain'].includes(head.state)) return false;
+        const since = head.observation?.lastProgressAt ?? head.dispatchedAt ?? head.createdAt;
+        return !!head.observation?.code || head.state === 'uncertain' || !!(this.options.attentionAfterMs && since
+            && Date.now() - since >= this.options.attentionAfterMs);
+    }
+    private scheduleAttention(queue: InstructionQueueSnapshot): void {
+        clearTimeout(this.attentionTimer); this.attentionTimer = undefined;
+        const head = queue.items[0], threshold = this.options.attentionAfterMs;
+        if (!head || !threshold || this.attention(queue) || !['dispatching', 'uncertain'].includes(head.state)) return;
+        const since = head.observation?.lastProgressAt ?? head.dispatchedAt ?? head.createdAt;
+        if (since) this.attentionTimer = setTimeout(() => {if (!this.closed) this.render();}, Math.max(1, since + threshold - Date.now()));
+    }
+    private attentionMarkup(queue: InstructionQueueSnapshot): string {
+        const head = queue.items[0], labels = this.options.labels;
+        if (!head || !['dispatching', 'uncertain'].includes(head.state)) return '';
+        const since = head.observation?.lastProgressAt ?? head.dispatchedAt ?? head.createdAt;
+        const warning = this.attention(queue) ? `<p class="llm-instruction-queue__error" role="status">${escapeHTML(head.observation?.code ?? labels.stalled ?? labels.states.uncertain)}</p>` : '';
+        const time = since ? `<p>${escapeHTML(labels.lastProgress ?? '')} <time>${escapeHTML(new Date(since).toLocaleString(this.options.locale))}</time></p>` : '';
+        const controls = this.options.executionControl ? `${this.button('check', labels.check ?? labels.retry)}
+            ${this.button('stop', this.stopConfirmation?.id === head.id ? labels.confirmStop ?? labels.cancel : labels.stop ?? labels.cancel, !!head.observation?.stopping)}` : '';
+        const link = this.options.sessionHref ? `<a href="${escapeHTML(this.options.sessionHref)}">${escapeHTML(labels.openSession ?? '')}</a>` : '';
+        return `<section data-instruction="${escapeHTML(head.id)}">${warning}${time}${head.observation?.stopping ? `<p role="status">${escapeHTML(labels.stopping ?? labels.states.uncertain)}</p>` : ''}<div class="llm-instruction-queue__actions">${controls}${link}</div></section>`;
+    }
+
     private recover(id: string): void {
         if (this.queue?.recovery?.id !== id) return;
         if (this.recoveryConfirmation?.id !== id || this.recoveryConfirmation.revision !== this.queue.revision) {
@@ -251,5 +294,5 @@ export class InstructionQueueView {
         catch { /* Diagnostics must not change queue operations. */ }
     }
 
-    destroy(): void { this.closed = true; this.events.abort(); this.element.remove(); }
+    destroy(): void { this.closed = true; clearTimeout(this.attentionTimer); this.events.abort(); this.element.remove(); }
 }

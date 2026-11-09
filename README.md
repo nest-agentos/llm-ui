@@ -217,3 +217,7 @@ Supply a `SettingsHost` with translations, trusted icons, validation/config code
 提问目录的行视图和键盘导航复用 ui-common `OutlineView`，窗口身份由 mdxeditor `ContentListView` 管理。宿主仅为用户消息提供“提交时间（缺失时使用记录时间）+ 提问摘要”的可选名称；助手回复不进入窗口索引。名称更新不替换消息 ID、内容框或编辑状态，搜索及更早历史仍沿用明确操作。
 
 Queued native input may carry `recovery.required` and a host-provided `ChatMessage.statusLabel`. The folded queue highlights required recovery, and the message header can explain a missing terminal receipt without changing message state, content revision or admission evidence. Recovery and dispatch remain host-owned.
+
+## 队列观察与手动处理
+
+`InstructionQueueView` 接受宿主提供的 `items[].observation`（`lastProgressAt`、错误 `code`、`stopping`）。`attentionAfterMs` 由宿主设置提醒门槛；错误立即提示，超时仅改变显示，本地定时器不读取后端或自动重发。`executionControl` 打开 `check` / `stop` 命令，停止需在同一队列版本二次确认；执行身份核对与实际清理由宿主负责。`sessionHref` 和相关 labels 提供会话入口及文案。相同 revision 的新观察可以刷新提示，同时保留正文编辑的原 CAS 条件。销毁组件释放提醒定时器。

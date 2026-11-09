@@ -1051,3 +1051,11 @@ it('refreshes recovery status and tool previews without changing the message rev
     await vi.waitFor(() => expect(host.host.textContent).not.toContain('Waiting'));
     expect(host.host.textContent).not.toContain('执行中');
 });
+
+it('shows accepted queued submissions as admission status without inventing a running tool', async () => {
+    const host = fixture({actions: {send: async (_input, context) => ({status: 'accepted', operationId: context.operationId}), reconcile: vi.fn()}});
+    const view = await host.open(); view.setText('Queued question'); await view.submit();
+    expect(host.host.textContent).toContain('Queued question');
+    expect(host.host.querySelector('.llm-tool-group')).toBeNull();
+    expect(host.operations.getSnapshot()).toMatchObject([{status: 'accepted'}]);
+});

@@ -357,7 +357,7 @@ export class ChatController implements ChatView {
             && records.some(record => record.context.operationId === message.submissionId)));
         const temporary = this.visibleRecords().filter(submissionRecord).filter(record => !record.observedUserMessageId && !messages.some(message => message.role === 'user'
             && message.acceptance === 'confirmed' && message.submissionId === record.context.operationId)).flatMap(record => {
-                if (record.status !== 'accepted' || !previews.has(record.context.operationId)) return [temporaryMessage(record, this.t('arguments'))];
+                if (record.status !== 'accepted' || !previews.has(record.context.operationId)) return [temporaryMessage(record, this.t('arguments'), this.t(record.status === 'submitting' ? 'pending' : record.status))];
                 const message = previews.get(record.context.operationId); return message ? [message] : [];
             });
         this.syncMessages([...messages, ...temporary]);
@@ -715,13 +715,12 @@ function operationKey(kind: OperationRecord['kind'], input: JsonValue): string {
     }
     return `${kind}:${JSON.stringify(input)}`;
 }
-function temporaryMessage(record: OperationRecord, label: string): ChatMessage {
+function temporaryMessage(record: OperationRecord, label: string, status: string): ChatMessage {
     const input = getOperationCallInput(record);
     return { id: `operation:${record.context.operationId}`, revision: ['submitting', 'accepted', 'unknown', 'rejected'].indexOf(record.status),
-        role: 'user', state: record.status === 'rejected' ? 'failed' : 'pending', timing: {submittedAt: record.submittedAt},
+        role: 'user', statusLabel: record.message ? `${status} · ${record.message}` : status, state: record.status === 'rejected' ? 'failed' : 'pending', timing: {submittedAt: record.submittedAt},
         parts: [{ id: 'text', kind: 'markdown', text: record.draft?.text ?? '' },
             ...(input ? [{id: 'arguments', kind: 'json' as const, label, value: input.values}] : []),
-            { id: 'status', kind: 'tool', name: record.status, summary: record.message ?? '', state: record.status === 'rejected' ? 'failed' : 'running' },
             ...(record.draft?.attachments ?? []).map(item => ({ id: item.id, kind: 'attachment' as const, file: item.file }))],
     };
 }

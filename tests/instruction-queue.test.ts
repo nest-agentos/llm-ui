@@ -173,3 +173,37 @@ it('isolates diagnostic callback failures from recovery submission', async () =>
     f.view.update({...f.queue, recovery: {id: 'a'}}); f.click('recover'); f.click('recover');
     await vi.waitFor(() => expect(f.edit).toHaveBeenCalledOnce());
 });
+
+it('warns at the progress deadline while collapsed without polling, replaying, or stopping execution', () => {
+    vi.useFakeTimers();
+    try {
+        vi.setSystemTime(10000000);
+        const f = setup({initiallyCollapsed: true, attentionAfterMs: 1800000, executionControl: true});
+        f.view.update({...f.queue, revision: 8, items: [{...f.queue.items[0], state: 'dispatching', observation: {lastProgressAt: Date.now()}}]});
+        expect(f.host.hidden).toBe(true); vi.advanceTimersByTime(1799999); expect(f.host.dataset.attention).toBe('false');
+        vi.advanceTimersByTime(1); expect(f.host.hidden).toBe(false); expect(f.host.dataset.attention).toBe('true');
+        expect(f.edit).not.toHaveBeenCalled(); expect(f.read).not.toHaveBeenCalled();
+        f.view.destroy(); expect(vi.getTimerCount()).toBe(0);
+    } finally {vi.useRealTimers();}
+});
+
+it('shows explicit errors immediately and requires a fresh confirmation to stop the original request', async () => {
+    const f = setup({executionControl: true, attentionAfterMs: 1800000});
+    const queue: InstructionQueueSnapshot = {...f.queue, revision: 8, items: [{...f.queue.items[0], state: 'dispatching', observation: {lastProgressAt: Date.now(), code: 'CONTEXT_OPERATION_CONFLICT'}}]};
+    f.view.update(queue); expect(f.host.hidden).toBe(false); expect(f.host.dataset.attention).toBe('true');
+    f.click('stop'); expect(f.edit).not.toHaveBeenCalled();
+    f.view.update({...queue, revision: 9}); f.click('stop'); expect(f.edit).not.toHaveBeenCalled();
+    f.click('stop'); await vi.waitFor(() => expect(f.edit).toHaveBeenCalledWith({action: 'stop', id: 'a', expectedRevision: 9}));
+});
+
+it('accepts same-revision progress evidence and never treats heartbeat updates as progress', () => {
+    vi.useFakeTimers();
+    try {
+        vi.setSystemTime(10000000); const f = setup({attentionAfterMs: 1800000});
+        const queue: InstructionQueueSnapshot = {...f.queue, revision: 8, items: [{...f.queue.items[0], state: 'dispatching', observation: {lastProgressAt: Date.now()}}]};
+        f.view.update(queue); vi.advanceTimersByTime(1700000); f.view.update({...queue});
+        vi.advanceTimersByTime(100000); expect(f.host.dataset.attention).toBe('true');
+        f.view.update({...queue, items: [{...queue.items[0], observation: {lastProgressAt: Date.now()}}]});
+        expect(f.host.dataset.attention).toBe('false');
+    } finally {vi.useRealTimers();}
+});
