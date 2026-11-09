@@ -15,6 +15,20 @@ for (const [name, target] of Object.entries(manifest.publishConfig.exports)) {
         assert.ok(existsSync(resolve(root, path)), `${name}: missing published artifact ${path}`);
 }
 function targets(value) {return typeof value === 'string' ? [value] : Object.values(value).flatMap(targets);}
+
+// Hosts may load either the aggregate stylesheet or the standalone Flow stylesheet.
+for (const entry of ['style.css', 'flow.css']) {
+    const css = readFileSync(resolve(root, 'dist', entry), 'utf8');
+    for (const [selector, declaration] of [
+        ['.dag-canvas__surface', 'position:relative'],
+        ['.dag-canvas__edges', 'position:absolute'],
+        ['.dag-node', 'position:absolute'],
+    ]) {
+        const rule = css.split('}').find(rule => rule.trimStart().startsWith(`${selector}{`));
+        assert.ok(rule?.includes(declaration), `${entry}: missing graph layout ${selector} ${declaration}`);
+    }
+}
+
 function files(directory) {
     return readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
         const path = resolve(directory, entry.name);

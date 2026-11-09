@@ -189,6 +189,8 @@ ChatBinding 的 `setActive?(active)` 和 `release?()` 由库调用；初始化�
 
 `@nestos/llm-ui/flow` 导出 GraphCanvas，用展示节点、端口和边接入拖拽与连线；回调捕获展示修订，隐藏或销毁取消在途手势。`@nestos/llm-ui/forms` 导出 SchemaForm，与 ParameterForm 共用叶字段渲染和读取；表达式只通过 acceptValue 注入。分别导入 flow.css/forms.css 使用独立样式。
 
+`flow.css` 包含 GraphCanvas 的节点、边和端口样式，聚合入口 `style.css` 也包含这些规则；消费构建产物时宿主须显式导入相应 CSS，不能依赖 JS 入口注入样式。
+
 产品可设 `inputPresentation: 'host'`，由既有宿主准备流程打开参数表单，输入区不展开 JSON 编辑器；独立视图默认保留内联编辑。目录 `autoSelectFirst: false` 要求宿主恢复偏好或用户明确选择，不自动选择首项。
 
 `ConversationSnapshot.composerIndicators` accepts optional host-owned `{id, label, value, detail?, tone?, progress?}` observations. The composer shows indicators inline beside the attachment control; optional normalized progress draws a segmented meter, with null distinguishing unknown occupancy from zero. Touch and keyboard users can expand the bounded details panel above the action row. Snapshot updates preserve the input DOM, draft and disclosure state; replacing a binding clears old indicators. The library does not interpret account, quota, cost or context policies and does not fetch data or change send availability.

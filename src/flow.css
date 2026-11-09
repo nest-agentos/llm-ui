@@ -1,4 +1,6 @@
 @import './forms.css';
+@import './graph.css';
+
 .llm-flow { display: flex; flex-direction: column; min-height: 300px; height: 100%; color: inherit; font: inherit; --llm-flow-border: #d8dce3; }
 .llm-flow__toolbar { display: flex; gap: 8px; padding: 8px; align-items: center; }
 .llm-flow__toolbar strong { flex: 1; }
