@@ -25,7 +25,7 @@ function setup(options: Partial<InstructionQueueViewOptions> = {}) {
     const edit = vi.fn(async () => ({...queue, revision: 9})), read = vi.fn(async () => queue);
     const view = new InstructionQueueView(host, {ownerId: queue.ownerId, labels, edit, read, ...options}); views.push(view); view.update(queue);
     const click = (action: string) => host.querySelector<HTMLButtonElement>(`[data-action="${action}"]`)!.click();
-    return {host, view, edit, read, queue, click};
+    return {host, view, edit, read, queue, click, labels};
 }
 
 it('collapses without discarding edits or selections and stays collapsed through queue updates', async () => {
@@ -135,4 +135,41 @@ it('keeps the unknown outcome notice visible after the recovered queue becomes e
     f.view.update({...f.queue, revision: 9, paused: true, items: [], recoveries: [{id: 'a', turnId: 'old', recoveredAt: 1, outcome: 'unknown'}]});
     expect(f.host.hidden).toBe(false);
     expect(f.host.querySelector('[data-action="recover"]')).toBeNull();
+});
+
+it('keeps required recovery visible and actionable while folded, without silently dispatching', () => {
+    const f = setup({initiallyCollapsed: true}); f.labels.recoveryRequired = 'Recovery required';
+    const queue = {...f.queue, items: [{...f.queue.items[0], state: 'dispatching' as const}]};
+    f.view.update({...queue, recovery: {id: 'a'}});
+    f.view.update({...queue, recovery: {id: 'a', required: true}});
+    expect(f.host.dataset.attention).toBe('true');
+    expect(f.host.querySelector('.llm-instruction-queue__status')!.textContent).toBe('Recovery required');
+    expect(f.host.querySelector('[data-action="toggle"]')!.getAttribute('aria-expanded')).toBe('false');
+    expect(f.edit).not.toHaveBeenCalled();
+});
+
+it('diagnoses local recovery confirmation separately from submitted and completed edits', async () => {
+    const onDiagnostic = vi.fn(), f = setup({onDiagnostic}); f.labels.recover = 'Recover'; f.labels.confirmRecovery = 'Confirm';
+    f.view.update({...f.queue, recovery: {id: 'a', required: true}});
+    f.click('recover'); expect(f.edit).not.toHaveBeenCalled();
+    expect(onDiagnostic).toHaveBeenLastCalledWith(expect.objectContaining({action: 'recover', stage: 'confirmation', result: 'pending'}));
+    const operationId = onDiagnostic.mock.calls[0][0].operationId;
+    f.click('recover'); await vi.waitFor(() => expect(onDiagnostic).toHaveBeenLastCalledWith(expect.objectContaining({stage: 'complete', result: 'success', expectedRevision: 7, revision: 9})));
+    expect(onDiagnostic.mock.calls.map(([event]) => [event.operationId, event.stage])).toEqual([
+        [operationId, 'confirmation'], [operationId, 'submit'], [operationId, 'complete']]);
+    expect(JSON.stringify(onDiagnostic.mock.calls)).not.toContain('Original');
+});
+
+it('reports a confirmation invalidated by a newer queue revision without submitting it', () => {
+    const onDiagnostic = vi.fn(), f = setup({onDiagnostic}); f.labels.recover = 'Recover';
+    f.view.update({...f.queue, recovery: {id: 'a'}}); f.click('recover');
+    f.view.update({...f.queue, revision: 8, recovery: {id: 'a'}});
+    expect(onDiagnostic).toHaveBeenLastCalledWith(expect.objectContaining({stage: 'confirmation_invalidated', code: 'QUEUE_CHANGED'}));
+    expect(f.edit).not.toHaveBeenCalled();
+});
+
+it('isolates diagnostic callback failures from recovery submission', async () => {
+    const f = setup({onDiagnostic: () => {throw new Error('diagnostic failure');}}); f.labels.recover = 'Recover';
+    f.view.update({...f.queue, recovery: {id: 'a'}}); f.click('recover'); f.click('recover');
+    await vi.waitFor(() => expect(f.edit).toHaveBeenCalledOnce());
 });

@@ -34,6 +34,8 @@ export interface ChatMessage {
     readonly role: 'user' | 'assistant' | 'system' | 'tool';
     readonly parts: readonly MessagePart[];
     readonly state: 'pending' | 'streaming' | 'complete' | 'failed' | 'cancelled';
+    /** Host-provided status text; never changes execution or admission facts. */
+    readonly statusLabel?: string;
     readonly submissionId?: string;
     /** Only confirmed user messages supply history-based acceptance evidence. */
     readonly acceptance?: 'optimistic' | 'confirmed';

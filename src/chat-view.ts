@@ -392,7 +392,7 @@ export class ChatController implements ChatView {
                 edit: (target, text) => this.edit(target, text), retry: target => this.retry(target),
             }, () => { this.follow(); this.search.refresh(); }, this.disclosure);
             row = { view, message, permissions }; this.rows.set(message.id, row); view.update(message, this.snapshot); view.setActive(this.active);
-        } else if (message.revision !== row.message.revision || message.state !== row.message.state || message.timestamp !== row.message.timestamp || JSON.stringify(message.timing) !== JSON.stringify(row.message.timing) || permissions !== row.permissions) {
+        } else if (message.revision !== row.message.revision || message.state !== row.message.state || message.statusLabel !== row.message.statusLabel || message.timestamp !== row.message.timestamp || JSON.stringify(message.timing) !== JSON.stringify(row.message.timing) || permissions !== row.permissions) {
             row.message = message; row.permissions = permissions; row.view.update(message, this.snapshot);
         } else if (this.options.messageActions) {
             row.view.renderActions(message, this.snapshot);

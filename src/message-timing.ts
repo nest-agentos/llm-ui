@@ -37,7 +37,7 @@ function messageTimes(message: ChatMessage, t: Translate): Timing {
 }
 function messageStatus(message: ChatMessage, timing: Timing, t: Translate): string {
     const states = {streaming: 'generating', pending: 'pending', complete: undefined, failed: 'toolFailed', cancelled: 'toolCancelled'} as const;
-    const label = states[message.state], status = label ? t(label) : '';
+    const label = states[message.state], status = message.statusLabel ?? (label ? t(label) : '');
     if (!knownTime(timing.started)) return status;
     const ended = message.state === 'streaming' ? Date.now() : timing.ended;
     if (!knownTime(ended) || ended < timing.started) return status;

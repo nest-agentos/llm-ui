@@ -5,7 +5,7 @@ import {randomUUID} from './random';
 export type InstructionState = 'pending' | 'dispatching' | 'failed' | 'uncertain';
 export interface InstructionQueueSnapshot {
     recoveries?: Array<{id: string; turnId: string; recoveredAt: number; outcome: 'unknown'}>;
-    recovery?: {id: string};
+    recovery?: {id: string; required?: boolean};
     ownerId: string; revision: number; paused: boolean; reason?: string;
     items: Array<{id: string; text: string; state: InstructionState; agentId?: string; targetLabel?: string; input?: JsonValue;
         textEditable?: boolean; files: Array<{name: string}>; error?: string; createdAt?: number; dispatchedAt?: number; acceptedAt?: number}>;
@@ -20,10 +20,12 @@ export interface InstructionQueueViewOptions {
     initiallyCollapsed?: boolean;
     toggleIcon?: string;
     labels: Record<'title' | 'resume' | 'pause' | 'merge' | 'paused' | 'hint' | 'attachments' | 'up' | 'down' | 'retry'
-        | 'edit' | 'editFailed' | 'save' | 'cancel' | 'remove', string> & {states: Record<InstructionState, string>; reasons?: Record<string, string>; arguments?: string; invalidArguments?: string; createdAt?: string; dispatchedAt?: string; acceptedAt?: string; expand?: string; collapse?: string; recover?: string; confirmRecovery?: string; recovered?: string};
+        | 'edit' | 'editFailed' | 'save' | 'cancel' | 'remove', string> & {states: Record<InstructionState, string>; reasons?: Record<string, string>; arguments?: string; invalidArguments?: string; createdAt?: string; dispatchedAt?: string; acceptedAt?: string; expand?: string; collapse?: string; recover?: string; confirmRecovery?: string; recovered?: string; recoveryRequired?: string};
     removeIcon?: string;
     edit(change: InstructionQueueEdit): Promise<InstructionQueueSnapshot>;
     read(): Promise<InstructionQueueSnapshot>;
+    onDiagnostic?(event: {operationId: string; action: string; stage: string; result: 'pending' | 'success' | 'failure';
+        instructionId?: string; expectedRevision?: number; revision?: number; durationMs: number; code?: string}): void;
 }
 function escapeHTML(value: string): string {
     return value.replace(/[&<>"']/g, char => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[char]!));
@@ -31,7 +33,7 @@ function escapeHTML(value: string): string {
 
 /** A projection and command editor; dispatch belongs exclusively to the Session backend. */
 export class InstructionQueueView {
-    private recoveryConfirmation?: {id: string; revision: number};
+    private recoveryConfirmation?: {id: string; revision: number; operationId: string};
     private queue?: InstructionQueueSnapshot;
     private editing?: {id: string; text: string; input?: string; revision: number};
     private readonly selected = new Set<string>();
@@ -39,6 +41,7 @@ export class InstructionQueueView {
     private closed = false;
     private readOnly = false;
     private error = '';
+    private diagnosticRevision?: number;
     private collapsed: boolean;
     private expandedScroll = 0;
     private readonly bodyId = `instruction-queue-${randomUUID()}`;
@@ -63,16 +66,18 @@ export class InstructionQueueView {
 
     update(queue?: InstructionQueueSnapshot): void {
         if (this.closed || !queue || queue.ownerId !== this.options.ownerId || this.queue && (queue.revision < this.queue.revision
-            || queue.revision === this.queue.revision && queue.reason === this.queue.reason && queue.recovery?.id === this.queue.recovery?.id)) return;
+            || queue.revision === this.queue.revision && queue.reason === this.queue.reason && queue.recovery?.id === this.queue.recovery?.id && queue.recovery?.required === this.queue.recovery?.required)) return;
         if (this.recoveryConfirmation && (this.recoveryConfirmation.revision !== queue.revision || this.recoveryConfirmation.id !== queue.recovery?.id))
-            this.recoveryConfirmation = undefined;
+            {this.diagnose(this.recoveryConfirmation.operationId, 'recover', 'confirmation_invalidated', 'failure', this.recoveryConfirmation.id, 0, 'QUEUE_CHANGED', queue.revision); this.recoveryConfirmation = undefined;}
         this.queue = this.queue?.revision === queue.revision ? {...this.queue, reason: queue.reason, recovery: queue.recovery} : queue;
         for (const id of this.selected) if (!this.queue.items.some(item => item.id === id && item.state === 'pending')) this.selected.delete(id);
         this.render();
     }
     setReadOnly(value: boolean): void {
         if (this.closed || this.readOnly === value) return;
-        this.readOnly = value; this.render();
+        this.readOnly = value;
+        if (this.queue?.recovery) this.diagnose(randomUUID(), 'recover', 'availability', value ? 'failure' : 'success', this.queue.recovery.id, 0, value ? 'QUEUE_READ_ONLY' : undefined);
+        this.render();
     }
 
     private render(): void {
@@ -95,10 +100,10 @@ export class InstructionQueueView {
         const state = queue.items.some(item => item.state === 'uncertain') ? 'uncertain'
             : queue.items.some(item => item.state === 'failed') ? 'failed'
             : queue.items.some(item => item.state === 'pending') ? 'pending' : 'dispatching';
-        const status = this.error ? this.options.labels.editFailed : ['failed', 'uncertain'].includes(state)
+        const status = this.error ? this.options.labels.editFailed : queue.recovery?.required && this.options.labels.recoveryRequired ? this.options.labels.recoveryRequired : ['failed', 'uncertain'].includes(state)
             ? this.options.labels.states[state] : queue.reason && this.options.labels.reasons?.[queue.reason]
                 || (queue.paused ? this.options.labels.paused : this.options.labels.states[state]);
-        this.element.dataset.attention = String(!!this.error || ['failed', 'uncertain'].includes(state));
+        this.element.dataset.attention = String(!!this.error || !!queue.recovery?.required || ['failed', 'uncertain'].includes(state));
         return `<button type="button" class="llm-instruction-queue__toggle" data-action="toggle" aria-controls="${this.bodyId}">
             ${this.options.toggleIcon ?? ''}<strong>${escapeHTML(this.options.labels.title)} · ${queue.items.length}</strong>
             <span class="llm-instruction-queue__status" aria-live="polite">${escapeHTML(status)}</span></button>
@@ -136,7 +141,7 @@ export class InstructionQueueView {
         return `<li data-instruction="${escapeHTML(item.id)}"><label><input type="checkbox" data-select="${escapeHTML(item.id)}"
             ${this.selected.has(item.id) ? 'checked' : ''} ${!pending || this.busy || this.readOnly ? 'disabled' : ''}>
             ${this.content(item)}</label>
-            <span class="llm-instruction-queue__meta">${index + 1} · ${escapeHTML(this.options.labels.states[item.state])}${item.targetLabel || item.agentId ? ` · ${escapeHTML(item.targetLabel ?? item.agentId!)}` : ''}${item.files.length ? ` · ${item.files.length} ${escapeHTML(this.options.labels.attachments)}` : ''}</span>
+            <span class="llm-instruction-queue__meta">${index + 1} · ${escapeHTML(this.queue?.recovery?.required && this.queue.recovery.id === item.id ? this.options.labels.recoveryRequired ?? this.options.labels.states[item.state] : this.options.labels.states[item.state])}${item.targetLabel || item.agentId ? ` · ${escapeHTML(item.targetLabel ?? item.agentId!)}` : ''}${item.files.length ? ` · ${item.files.length} ${escapeHTML(this.options.labels.attachments)}` : ''}</span>
             ${this.times(item)}${this.rowActions(item, pending, position, waiting.length)}
             ${item.error ? `<p class="llm-instruction-queue__error">${escapeHTML(this.options.labels.reasons?.[item.error] ?? item.error)}</p>` : ''}</li>`;
     }
@@ -188,10 +193,12 @@ export class InstructionQueueView {
     private recover(id: string): void {
         if (this.queue?.recovery?.id !== id) return;
         if (this.recoveryConfirmation?.id !== id || this.recoveryConfirmation.revision !== this.queue.revision) {
-            this.recoveryConfirmation = {id, revision: this.queue.revision}; this.render(); return;
+            this.recoveryConfirmation = {id, revision: this.queue.revision, operationId: randomUUID()};
+            this.diagnose(this.recoveryConfirmation.operationId, 'recover', 'confirmation', 'pending', id); this.render(); return;
         }
+        const operationId = this.recoveryConfirmation.operationId;
         this.recoveryConfirmation = undefined;
-        void this.edit({action: 'recover', id});
+        void this.edit({action: 'recover', id}, operationId);
     }
     private editAction(action: string, id?: string): boolean {
         if (action === 'edit') {
@@ -217,20 +224,31 @@ export class InstructionQueueView {
         void this.edit({action: 'reorder', ids});
     }
 
-    private async edit(edit: InstructionQueueChange): Promise<void> {
-        if (this.busy || this.readOnly || !this.queue) return;
+    private async edit(edit: InstructionQueueChange, operationId = randomUUID()): Promise<void> {
+        const id = 'id' in edit ? edit.id : undefined, started = Date.now();
+        if (this.busy || this.readOnly || !this.queue) {this.diagnose(operationId, edit.action, 'admission', 'failure', id, 0, 'QUEUE_EDIT_BLOCKED'); return;}
         const changesInput = ['update', 'update-input'].includes(edit.action);
         const expectedRevision = changesInput ? this.editing!.revision : this.queue.revision;
+        this.diagnosticRevision = expectedRevision; this.diagnose(operationId, edit.action, 'submit', 'pending', id);
         this.busy = true; this.error = ''; this.render();
         try {
             const queue = await this.options.edit({ ...edit, expectedRevision });
             if (changesInput) this.editing = undefined;
             this.update(queue);
+            this.diagnose(operationId, edit.action, 'complete', 'success', id, Date.now() - started);
         } catch (error) {
             this.error = error instanceof Error ? error.message : this.options.labels.editFailed;
+            const code = (error as {remoteCode?: string; code?: string})?.remoteCode ?? (error as {code?: string})?.code;
+            this.diagnose(operationId, edit.action, 'complete', 'failure', id, Date.now() - started, code && /^[A-Z][A-Z0-9_]{0,79}$/.test(code) ? code : 'QUEUE_EDIT_FAILED');
             try { this.update(await this.options.read()); }
             catch { /* Preserve the last confirmed projection and the actionable error. */ }
-        } finally { this.busy = false; if (!this.closed) this.render(); }
+        } finally { this.busy = false; this.diagnosticRevision = undefined; if (!this.closed) this.render(); }
+    }
+
+    private diagnose(operationId: string, action: string, stage: string, result: 'pending' | 'success' | 'failure', instructionId?: string, durationMs = 0, code?: string, revision = this.queue?.revision): void {
+        try {this.options.onDiagnostic?.({operationId, action, stage, result, instructionId,
+            expectedRevision: this.diagnosticRevision ?? this.recoveryConfirmation?.revision ?? this.queue?.revision, revision, durationMs, code});}
+        catch { /* Diagnostics must not change queue operations. */ }
     }
 
     destroy(): void { this.closed = true; this.events.abort(); this.element.remove(); }

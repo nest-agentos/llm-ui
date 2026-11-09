@@ -28,3 +28,9 @@ it('keeps missing completion unknown, distinguishes failures, and stops the live
     expect(view.time.textContent).toContain('失败于'); expect(view.time.textContent).not.toContain('完成于');
     timing.destroy(); view.destroy(); expect(vi.getTimerCount()).toBe(0);
 });
+it('shows host recovery status without inventing execution completion or changing the pending state', () => {
+    const {view, timing} = setup();
+    timing.update({...base, role: 'user', state: 'pending', statusLabel: '需要恢复', timestamp: 1791458565000});
+    expect(view.status.textContent).toBe('需要恢复'); expect(view.time.textContent).toContain('发送于');
+    expect(view.time.textContent).not.toContain('完成于'); timing.destroy(); view.destroy();
+});

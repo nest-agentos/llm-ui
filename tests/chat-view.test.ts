@@ -1042,3 +1042,12 @@ it('rejects OCR review after its original attachment is removed without altering
         expect(onDiagnostic).toHaveBeenCalledWith(expect.objectContaining({stage: 'apply', result: 'failure', code: 'OCR_ATTACHMENT_CHANGED'}));
     } finally {vi.unstubAllGlobals();}
 });
+it('refreshes recovery status and tool previews without changing the message revision or admission facts', async () => {
+    const message = {id: 'queued', revision: 3, role: 'user' as const, state: 'pending' as const,
+        parts: [{id: 'status', kind: 'tool' as const, name: 'Waiting', state: 'running' as const}]};
+    const host = fixture(); host.publish({messages: [message]}); await host.open();
+    host.publish({messages: [{...message, statusLabel: '需要恢复', parts: [{id: 'status', kind: 'tool', name: '需要恢复', state: 'unknown'}]}]});
+    await vi.waitFor(() => expect(host.host.textContent).toContain('需要恢复'));
+    await vi.waitFor(() => expect(host.host.textContent).not.toContain('Waiting'));
+    expect(host.host.textContent).not.toContain('执行中');
+});
