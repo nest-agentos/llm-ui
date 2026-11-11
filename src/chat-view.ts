@@ -1,7 +1,8 @@
+import {formatDateTime,mountTitleBar as mountSharedTitleBar} from '@nestos/ui-common';
 import {ToolOutputGroups} from './tool-groups';
 import {ChatOcr} from './ocr';
 import {bindChatScrollRouting} from './chat-scroll-routing';
-import {mountTitleBar as mountSharedTitleBar} from '@nestos/ui-common';
+
 import {DisclosureController} from './disclosure';
 import {isCommandInput} from './commands';
 import { randomUUID } from './random';
@@ -382,7 +383,7 @@ export class ChatController implements ChatView {
         if (message.role !== 'user') return undefined;
         const time = message.timing?.submittedAt ?? message.timestamp;
         const summary = message.parts.flatMap(part => part.kind === 'markdown' ? [part.text] : []).join(' ').replace(/\s+/g, ' ').slice(0, 160);
-        return [time ? new Date(time).toLocaleString(this.options.locale) : '', summary || this.t('promptAttachment')].filter(Boolean).join(' · ');
+        return [time ? formatDateTime(new Date(time), this.options.locale) : '', summary || this.t('promptAttachment')].filter(Boolean).join(' · ');
     }
     private messageRow(message: ChatMessage) {
         let row = this.rows.get(message.id);

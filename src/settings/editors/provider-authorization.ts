@@ -1,3 +1,4 @@
+import {formatDateTime} from '@nestos/ui-common';
 import type { SettingsRuntime } from '../runtime';
 import { bindConstructor } from '../binding';
 import type { LocaleKey, IConnectionService, ProviderAuthorizationState } from '../contracts/domain';
@@ -64,7 +65,7 @@ export class ProviderAuthorizationPanel {
     }
     private pendingMarkup(pending: PendingAuthorization): string {
         const runtime = this.settingsRuntime;
-        const expires = new Date(pending.expiresAt).toLocaleString(dependencies(runtime).getLocale());
+        const expires = formatDateTime(new Date(pending.expiresAt), dependencies(runtime).getLocale());
         return `<label class="provider-authorization__field">${dependencies(runtime).t('provider.auth.url')}
                 <textarea class="settings-form__textarea provider-authorization__url" data-auth-url readonly rows="4" spellcheck="false">${dependencies(runtime).escapeHTML(pending.url)}</textarea></label>
             <p class="settings-form__help">${dependencies(runtime).t('provider.auth.urlHint')}</p>

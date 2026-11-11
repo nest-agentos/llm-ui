@@ -1,3 +1,4 @@
+import {formatClockTime,formatDateTime} from '@nestos/ui-common';
 import type {JsonValue} from './contracts';
 import {parseArgumentJson} from './argument-json';
 import {randomUUID} from './random';
@@ -165,8 +166,8 @@ export class InstructionQueueView {
             const date = new Date(item[key] ?? NaN);
             if (!Number.isFinite(date.getTime()) || date.getTime() <= 0) return [];
             const label = this.options.labels[key] ?? '';
-            const time = date.toLocaleTimeString(this.options.locale, {hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false});
-            return [`<span class="llm-instruction-queue__meta">${escapeHTML(label)} <time datetime="${date.toISOString()}" title="${escapeHTML(date.toLocaleString(this.options.locale))}">${escapeHTML(time)}</time></span>`];
+            const time = formatClockTime(date, this.options.locale, {hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false});
+            return [`<span class="llm-instruction-queue__meta">${escapeHTML(label)} <time datetime="${date.toISOString()}" title="${escapeHTML(formatDateTime(date, this.options.locale))}">${escapeHTML(time)}</time></span>`];
         }).join('');
     }
     private rowActions(item: InstructionQueueSnapshot['items'][number], pending: boolean, position: number, total: number): string {
@@ -226,7 +227,7 @@ export class InstructionQueueView {
         if (!head || !['dispatching', 'uncertain'].includes(head.state)) return '';
         const since = head.observation?.lastProgressAt ?? head.dispatchedAt ?? head.createdAt;
         const warning = this.attention(queue) ? `<p class="llm-instruction-queue__error" role="status">${escapeHTML(head.observation?.code ?? labels.stalled ?? labels.states.uncertain)}</p>` : '';
-        const time = since ? `<p>${escapeHTML(labels.lastProgress ?? '')} <time>${escapeHTML(new Date(since).toLocaleString(this.options.locale))}</time></p>` : '';
+        const time = since ? `<p>${escapeHTML(labels.lastProgress ?? '')} <time>${escapeHTML(formatDateTime(new Date(since), this.options.locale))}</time></p>` : '';
         const controls = this.options.executionControl ? `${this.button('check', labels.check ?? labels.retry)}
             ${this.button('stop', this.stopConfirmation?.id === head.id ? labels.confirmStop ?? labels.cancel : labels.stop ?? labels.cancel, !!head.observation?.stopping)}` : '';
         const link = this.options.sessionHref ? `<a href="${escapeHTML(this.options.sessionHref)}">${escapeHTML(labels.openSession ?? '')}</a>` : '';
