@@ -61,3 +61,16 @@ it('restores approval notes and captures edits without creating an approval deci
     card.setPending(true); note.dispatchEvent(new Event('change', {bubbles: true})); expect(changed).toHaveBeenCalledTimes(1);
     card.destroy();
 });
+
+it('shows approval context first and only mounts escaped raw commands after expansion',async()=>{
+ const submit=vi.fn(async()=>{}),command='python3 - <<\'PY\'\n<script>bad()</script>\nPY';
+ const card=createInteractionCard({id:'approval-context',revision:1,state:'pending',kind:'approval',title:'Update verification',detail:'Update script and remove specified caches',
+  facts:[{label:'Target',value:'/project/<verify>.mjs'}],details:[{label:'View full command',text:command}],decisions:[{id:'accept',label:'Allow once'},{id:'decline',label:'Decline'}]},submit);
+ document.body.append(card.element);const disclosure=card.element.querySelector('details')!,pre=disclosure.querySelector('pre')!;
+ expect(card.element.textContent).toContain('Update script and remove specified caches');expect(card.element.textContent).toContain('/project/<verify>.mjs');
+ expect(disclosure.open).toBe(false);expect(pre.textContent).toBe('');expect(card.element.textContent).not.toContain(command);
+ disclosure.open=true;disclosure.dispatchEvent(new Event('toggle'));expect(pre.textContent).toBe(command);expect(card.element.querySelector('script')).toBeNull();expect(submit).not.toHaveBeenCalled();
+ card.setPending(true);card.setPending(false);expect(disclosure.open).toBe(true);
+ card.element.querySelector('button')!.click();await vi.waitFor(()=>expect(submit).toHaveBeenCalledWith({kind:'approval',decisionId:'accept'}));
+ disclosure.open=false;disclosure.dispatchEvent(new Event('toggle'));expect(pre.textContent).toBe('');card.destroy();
+});

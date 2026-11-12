@@ -52,6 +52,8 @@ export type InputField = { readonly id: string; readonly label: string; readonly
     | { readonly kind: 'multi-choice'; readonly choices: readonly Choice[]; readonly min?: number; readonly max?: number; readonly other?: string }
 );
 export type InteractionView = {
+    readonly facts?:readonly {readonly label:string;readonly value:string}[];
+    readonly details?:readonly {readonly label:string;readonly text:string}[];
     readonly id: string; readonly revision: number; readonly title: string; readonly detail?: string;
     readonly state: 'pending' | 'resolved' | 'cancelled' | 'expired';
     readonly messageId?: string; readonly partId?: string;

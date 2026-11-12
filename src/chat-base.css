@@ -128,3 +128,10 @@
 .llm-tool-group[data-state="failed"] > .llm-tool-group__summary {color:var(--llm-chat-danger,#b22);}
 .llm-tool-group__body {padding:0 8px 8px;min-width:0;}
 .llm-tool-group__body > .llm-chat__message {margin-block:4px;}
+
+.llm-chat__interaction-facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; }
+.llm-chat__interaction-facts dt { opacity: .75; }
+.llm-chat__interaction-facts dd { margin: 0; white-space: pre-wrap; }
+.llm-chat__interaction-details { margin-block: 8px; }
+.llm-chat__interaction-details summary { cursor: pointer; }
+.llm-chat__interaction-details pre { max-height: 24vh; overflow: auto; }

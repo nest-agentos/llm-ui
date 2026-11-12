@@ -27,13 +27,29 @@ export class InteractionCard {
     constructor(readonly request: InteractionView, private readonly t: Translate,
         private readonly submit: (response: InteractionResponse) => Promise<void>, private readonly options: InteractionCardOptions = {}) {
         this.element.dataset.requestId = request.id;
-        this.element.append(element('h3', undefined, request.title), element('p', undefined, request.detail ?? ''), this.form, this.feedback);
+        this.element.append(element('h3', undefined, request.title));
+        this.context();
+        this.element.append(this.form,this.feedback);
         if (request.state !== 'pending') { this.form.textContent = request.state; return; }
         if (request.kind === 'approval') this.approval();
         else if (request.kind === 'input') this.input(request.fields);
         else this.form.textContent = this.t('unsupportedInteraction');
         this.form.addEventListener('input', () => this.changed());
         this.form.addEventListener('change', () => this.changed());
+    }
+    private context():void {
+        if(this.request.detail)this.element.append(element('p',undefined,this.request.detail));
+        if(this.request.facts?.length){
+            const facts=element('dl','llm-chat__interaction-facts');
+            for(const fact of this.request.facts)facts.append(element('dt',undefined,fact.label),element('dd',undefined,fact.value));
+            this.element.append(facts);
+        }
+        for(const detail of this.request.details??[]){
+            const disclosure=element('details','llm-chat__interaction-details'),body=element('pre');
+            disclosure.append(element('summary',undefined,detail.label),body);
+            disclosure.addEventListener('toggle',()=>{body.textContent=disclosure.open?detail.text:'';});
+            this.element.append(disclosure);
+        }
     }
     private approval(): void {
         const request = this.request;
