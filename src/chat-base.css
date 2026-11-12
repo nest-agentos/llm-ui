@@ -17,6 +17,7 @@
 .llm-chat__error, .llm-chat__argument-error, .llm-chat__validation { color: #d24444; margin: 4px 0; font-size: .85rem; }
 .llm-chat__interactions { max-height: 35vh; overflow: auto; }
 .llm-chat__interaction { max-width: var(--llm-chat-width, 780px); margin: 8px auto; padding: 12px; border: 1px solid var(--llm-chat-border, #d8dce3); border-radius: 8px; overflow-wrap: anywhere; }
+.llm-chat__interaction pre, .llm-chat__interaction > p { white-space: pre-wrap; overflow-wrap: anywhere; }
 .llm-chat__interaction form { display: flex; flex-wrap: wrap; gap: 8px; }
 .llm-chat__interaction fieldset { box-sizing: border-box; flex: 1 0 100%; min-width: 0; margin: 0; border: 1px solid var(--llm-chat-border, #d8dce3); border-radius: 6px; }
 .llm-chat__interaction label { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 4px 8px; margin-block: 8px; }
