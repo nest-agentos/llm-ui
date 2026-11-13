@@ -14,12 +14,12 @@
 - 结构化参数由 inputContract 提供目标及签名，draft.input 保留 JSON 原文和独立修订；无效原文阻止提交，目标变化保留参数并要求重新确认。参数、默认值及零参数入口不要求正文。validateInput 只提供宿主提前反馈，最终准入仍归宿主；命令不消费参数草稿。
 - 自定义 renderer 是可信宿主代码；模型 Markdown 不登记扩展。显示和打印共用内容策略。
 - json part 默认折叠，展开才填充纯文本 JSON，更新保留当前 details；复制包含结构化值。参数从冻结的操作输入投影，不伪造持久用户历史；未展开正文不会出现在当前 DOM 打印中。
-- MindOS 业务兼容工厂在主仓库的 `ui/llm-ui-adapter`，不属于本独立仓库；通用 Flow 视图通过本包 `/flow` 提供。
+- NestOS 业务兼容工厂在主仓库的 `ui/llm-ui-adapter`，不属于本独立仓库；通用 Flow 视图通过本包 `/flow` 提供。
 - 验证：`pnpm typecheck`、`pnpm test`、`pnpm build`；构建扫描源码、JS 和声明的外部依赖。
 
 图片能力由可选 ImageEditingPort 注入预处理、上传后元数据保存与整组编辑；本包不依赖 image-parser。编辑结果需按原附件及版本整体核对，销毁或隐藏后丢弃迟到结果，不关闭共享端口。
 
-操作身份和上传项身份统一使用包内 randomUUID 兼容工具，支持原生方法缺失或抛错；不因此增加 common 依赖。Chat/Flow 回归覆盖这些入口；MindOS 集成另有 uuid:check。
+操作身份和上传项身份统一使用包内 randomUUID 兼容工具，支持原生方法缺失或抛错；不因此增加 common 依赖。Chat/Flow 回归覆盖这些入口；NestOS 集成另有 uuid:check。
 
 输入能力由 snapshot.selectors / commands 投影；命令 source、稳定 id 与 revision 一起捕获，选择候选只补全，明确提交才走 actions.command 及操作台账。composeCommandCatalogs 保留不同来源的同名命令，禁止按注册顺序覆盖或失败后回落给模型。action 命令不伪造用户气泡；prompt 命令沿用正式用户消息替换。选择器 variants 只支持一个独立父项，值随父项作用域切换，移除的选择器不能残留在提交中。
 

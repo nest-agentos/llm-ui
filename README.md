@@ -1,6 +1,6 @@
 # @nestos/llm-ui
 
-独立的原生 DOM LLM 界面库，包含聊天与 Flow。唯一直接运行时依赖为 `@nestos/mdxeditor`；不依赖 MindOS、Session、Kernel、Flow 执行包、VFS、框架或特定传输协议。
+独立的原生 DOM LLM 界面库，包含聊天与 Flow。唯一直接运行时依赖为 `@nestos/mdxeditor`；不依赖 NestOS、Session、Kernel、Flow 执行包、VFS、框架或特定传输协议。
 
 ## npm 与源码消费
 
@@ -13,7 +13,7 @@ pnpm test
 pnpm build
 ```
 
-源码与 TypeScript/Vite 配置均不引用上级工作区。MindOS 将此仓库作为 `libraries/llm-ui` 子模块使用；该目录就是开发工作树，直接在其中提交并推送，再由主仓库更新子模块提交，不维护第二份源码。
+源码与 TypeScript/Vite 配置均不引用上级工作区。NestOS 将此仓库作为 `libraries/llm-ui` 子模块使用；该目录就是开发工作树，直接在其中提交并推送，再由主仓库更新子模块提交，不维护第二份源码。
 
 发布制品通过 npm 安装，根入口使用 dist JavaScript 和声明：
 
@@ -21,7 +21,7 @@ pnpm build
 pnpm add @nestos/llm-ui @nestos/mdxeditor
 ```
 
-源码位于 libraries/llm-ui。pnpm 工作区将该目录与应用纳入 packages 后，应用声明 `@nestos/llm-ui: workspace:*`，包 exports 自动指向 src；mdxeditor 也可作为源码工作区提供。无需生成 dist，也无需为 Session、Flow 执行包或其他 MindOS 包设置路径别名。
+源码位于 libraries/llm-ui。pnpm 工作区将该目录与应用纳入 packages 后，应用声明 `@nestos/llm-ui: workspace:*`，包 exports 自动指向 src；mdxeditor 也可作为源码工作区提供。无需生成 dist，也无需为 Session、Flow 执行包或其他 NestOS 包设置路径别名。
 
 源码入口只使用自身相对模块和公开的 mdxeditor 包。外部 Vite/TypeScript 工程也可直接引用 vendored `src/index.ts` 或 `src/flow.ts`，并提供 mdxeditor 依赖；使用支持 TypeScript 与 CSS 的 bundler。构建工具脚本不进入源码运行依赖。
 
@@ -42,11 +42,11 @@ await view.flushDraft();
 await view.destroy();
 ```
 
-可运行的内存宿主组合见 [memory-host.ts](./examples/memory-host.ts)。它演示快照发布、提交值捕获、选择器、资源候选及 toolbar 的 update/destroy。MindOS 的 Session 和原生会话接入位于 `@nestos/llm-ui-adapter/independent`。
+可运行的内存宿主组合见 [memory-host.ts](./examples/memory-host.ts)。它演示快照发布、提交值捕获、选择器、资源候选及 toolbar 的 update/destroy。NestOS 的 Session 和原生会话接入位于 `@nestos/llm-ui-adapter/independent`。
 
 标题栏提供“搜索内容”按钮，查找当前会话已加载的消息正文、思考、工具文本和附件名。搜索忽略大小写，支持匹配计数、高亮及上一项/下一项定位；视图内按 Ctrl/Cmd+F 打开，搜索框内按 Enter/Shift+Enter 切换，Esc 关闭。流式更新和加载更早消息后刷新结果；不会自动加载未展示的历史，不检索草稿或宿主自定义 renderer 内部内容。
 
-兼容编辑器可通过 `createContentSearch({ root, history, getContents, onOpen, onNavigate })` 复用同一搜索控件。宿主用 getContents 按展示顺序提供稳定 ID 与可读正文 DOM，onOpen 激活尚未呈现的内容，onNavigate 展开目标历史卡片；控件再经 mdxeditor 的 revealRenderedContent 展开命中祖先，随后测量并滚动历史视口。返回的 button 和 element 由宿主挂载。控件只在打开且活动时观察正文变化，过滤表单及 `data-search-exclude` 区域，并在销毁时释放观察和高亮。MindOS 的本地及原生会话标题栏已接入此控件，手机上也直接显示搜索按钮。
+兼容编辑器可通过 `createContentSearch({ root, history, getContents, onOpen, onNavigate })` 复用同一搜索控件。宿主用 getContents 按展示顺序提供稳定 ID 与可读正文 DOM，onOpen 激活尚未呈现的内容，onNavigate 展开目标历史卡片；控件再经 mdxeditor 的 revealRenderedContent 展开命中祖先，随后测量并滚动历史视口。返回的 button 和 element 由宿主挂载。控件只在打开且活动时观察正文变化，过滤表单及 `data-search-exclude` 区域，并在销毁时释放观察和高亮。NestOS 的本地及原生会话标题栏已接入此控件，手机上也直接显示搜索按钮。
 
 `createInteractionCard(request, submit, {locale, translate})` 提供与 ChatView 共用的审批和问答卡片，支持单选、多选、选项说明、自定义答案及密码字段。宿主挂载返回的 `element`，用 `setPending` 更新提交权限，结束时调用 `destroy`；同一请求的观察更新应复用卡片，保留未提交的输入。未知交互显示只读提示。
 
@@ -91,7 +91,7 @@ const defaults = readParameterFields(container, fields, { mode: 'defaults' });
 
 `mode: 'defaults'` 的空值表示继承，布尔值可选择继承/开启/关闭；`mode: 'run'` 使用定义默认值并校验必填、数值边界、整数及 JSON。宿主通过 `labels`/`error` 翻译，通过 `classes`/`optionLabel` 调整展示，通过 `renderField`/`parseField` 替换特殊控件。嵌入其他表单时可用 `namePrefix` 隔离原生控件名称，返回值仍使用原定义字段名。自定义控件保留同索引 `data-parameter` 的原生值控件，事件与释放归宿主。公共表单不读取 Flow 目录、版本、连接、凭据或存储。
 
-默认 Flow 检查器也使用这套字段组件，通过 `parameterForm` 调整通用字段；`mountInspector` 可替换整个面板。MindOS 的智能体默认配置与 Flow 运行参数面板复用同一表单，业务连接校验、图片上传与运行仍由适配层执行。
+默认 Flow 检查器也使用这套字段组件，通过 `parameterForm` 调整通用字段；`mountInspector` 可替换整个面板。NestOS 的智能体默认配置与 Flow 运行参数面板复用同一表单，业务连接校验、图片上传与运行仍由适配层执行。
 
 Flow 是本库的一部分。聊天集成通过 features.flow 控制，默认关闭；只有启用并点击入口后才加载 Flow 代码：
 
@@ -120,7 +120,7 @@ const flow = await createFlowView(container, {
 
 通用视图提供节点面板、端口连线、拖动、节点参数编辑、保存/运行/停止和执行输出。宿主通过 FlowSnapshot 投影节点类型、参数字段、端口、权限和运行状态，通过具名 callback 执行修改，不需要库理解具体插件名或业务模板。复杂节点检查器可通过 mountInspector 注入，并在卸载时释放。
 
-节点编辑携带 expectedRevision；连线、保存和运行使用 graphRevision，它不随流式运行状态推进。取消固定 executionRef，unknown 通过同一宿主台账恢复核对。没有 action 的视图只读，销毁不停止执行。Flow 的存储、编译、运行和 MindOS 专有节点规则位于适配层及宿主。
+节点编辑携带 expectedRevision；连线、保存和运行使用 graphRevision，它不随流式运行状态推进。取消固定 executionRef，unknown 通过同一宿主台账恢复核对。没有 action 的视图只读，销毁不停止执行。Flow 的存储、编译、运行和 NestOS 专有节点规则位于适配层及宿主。
 
 ## 宿主契约
 
@@ -141,7 +141,7 @@ const flow = await createFlowView(container, {
 
 宿主可投影 `snapshot.inputContract = {targetId, signature: {id, revision, digest}, label}` 开启参数 JSON 编辑器。`view.setArguments(json)` 与编辑器操作修改同一份 `draft.input` 原文和修订；无效 JSON 原文仍可保存，但禁止发送，不回退到旧有效值。参数根值限定为对象，可发送 `{}`、纯参数和全默认调用；无契约时普通聊天仍要求文字或附件。正文中的 JSON 保持普通文字。
 
-`MessagePart.kind = 'json'` 用专用内容块展示结构化值，默认折叠，展开才填充格式化正文；更新保留展开状态，内容以文本节点显示。复制消息包含完整 JSON；打印当前 DOM 只包含已展开加载的 JSON 正文。`getOperationCallInput(record)` 可读取既有台账中的冻结调用参数，临时提交卡片和 MindOS Session 投影共用该数据，不把参数拼成模型 Markdown。
+`MessagePart.kind = 'json'` 用专用内容块展示结构化值，默认折叠，展开才填充格式化正文；更新保留展开状态，内容以文本节点显示。复制消息包含完整 JSON；打印当前 DOM 只包含已展开加载的 JSON 正文。`getOperationCallInput(record)` 可读取既有台账中的冻结调用参数，临时提交卡片和 NestOS Session 投影共用该数据，不把参数拼成模型 Markdown。
 
 `ChatSubmission.input` 携带目标、签名及解析后的显式 values；宿主负责默认值、schema、绑定、资产与权限的最终准入。可注入纯函数 `validateInput` 提前反馈字段约束，不能替代后端校验。目标或签名改变后保留原参数，需用户检查并重新应用；移除目标后须显式处理残留参数。接纳只清理修订仍匹配的参数，命令接纳不消费参数草稿。表单与 JSON 的统一视图、异步 readiness 和通用文件传输仍由宿主进一步接入。
 
